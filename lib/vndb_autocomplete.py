@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS cached_vndb_results (
     vndb_id TEXT UNIQUE,
     title TEXT,
     cover_image_url TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    cover_image_nsfw INTEGER DEFAULT 0
 );
 """
 
@@ -50,8 +51,8 @@ END;
 """
 
 CACHED_VNDB_RESULTS_INSERT_QUERY = """
-INSERT INTO cached_vndb_results (vndb_id, title, cover_image_url) 
-VALUES (?, ?, ?)
+INSERT INTO cached_vndb_results (vndb_id, title, cover_image_url, cover_image_nsfw) 
+VALUES (?, ?, ?, ?)
 ON CONFLICT(vndb_id) DO UPDATE SET 
     title=excluded.title,
     cover_image_url=excluded.cover_image_url,
@@ -72,7 +73,7 @@ WHERE vndb_id = ?;
 
 CACHED_VNDB_THUMBNAIL_QUERY = """
 SELECT cover_image_url FROM cached_vndb_results
-WHERE vndb_id = ?;
+WHERE vndb_id = ? AND cover_image_nsfw = 0;
 """
 
 CACHED_VNDB_TITLE_QUERY = """
@@ -93,7 +94,7 @@ async def query_vndb(interaction: discord.Interaction, current_input: str, bot: 
 
     payload = {
         "filters": filters,
-        "fields": "title, image.url"
+        "fields": "title, image.url, image.sexual"
     }
 
     async with aiohttp.ClientSession() as session:
@@ -107,6 +108,12 @@ async def query_vndb(interaction: discord.Interaction, current_input: str, bot: 
                     vndb_id = vn.get("id")
                     title = vn.get("title")
                     cover_image_url = vn.get("image", {}).get("url")
+                    cover_image_nsfw = vn.get("image", {}).get("sexual", False)
+                    if cover_image_nsfw == 0:
+                        cover_image_nsfw = False
+                    else:
+                        cover_image_nsfw = True
+
                     if not title or not vndb_id:
                         continue
 
@@ -114,7 +121,7 @@ async def query_vndb(interaction: discord.Interaction, current_input: str, bot: 
                     if title:
                         choices.append(discord.app_commands.Choice(name=choice_name, value=str(vndb_id)))
 
-                    await bot.RUN(CACHED_VNDB_RESULTS_INSERT_QUERY, (vndb_id, title, cover_image_url))
+                    await bot.RUN(CACHED_VNDB_RESULTS_INSERT_QUERY, (vndb_id, title, cover_image_url, cover_image_nsfw))
 
                 return choices[:10]
             elif response.status == 429:
