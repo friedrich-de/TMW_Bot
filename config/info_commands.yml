@@ -1,0 +1,32 @@
+guide:	|
+	We have a guide you can find [here](<https://learnjapanese.moe/guide/>). This will explain everything you need in order to learn Japanese as well as the general methodology used in TheMoeWay.
+immersion:	|
+	Immersion is contact with the language in a natural manner, for instance by watching anime or by reading a book in the language. For explanations on what immersion actually is and how it works, read [this](<https://learnjapanese.moe/guide/#15-what-even-is-immersion>). For tips on how to best do immersion, see [this](<https://learnjapanese.moe/guide/#27-how-to-immerse>) and [this](<https://donkuri.github.io/learn-japanese/immersion/>).
+anki:	|
+	Anki is a [spaced-repetition system](<https://en.wikipedia.org/wiki/Spaced_repetition>) (SRS) made up of virtual flashcards. You can find it [here](<https://apps.ankiweb.net/>). You can learn how to set it up with [TMW's guide](<https://learnjapanese.moe/guide/#quick-anki-setup>) as well as kuri's [guide](<https://donkuri.github.io/learn-japanese/setup/#anki-setup>).
+yomitan:	|
+	Yomitan is a popup dictionary browser extension meant to help you learn Japanese and other languages. To learn more about it, see the [Yomitan wiki](<https://yomitan.wiki/>). For information on how to set it up, see [this guide](<https://donkuri.github.io/learn-japanese/setup/#yomitan-setup>).
+mining:	|
+	Mining is a way to find new words in your immersion by adding new words to your Anki mining deck. For a detailed explanation of the process, please read kuri's [mining section](<https://donkuri.github.io/learn-japanese/guide/#consuming-native-content>). For specific mining setups, see kuri's [mining guide](<https://donkuri.github.io/learn-japanese/mining/>) and xelieu's [setup guide](<https://xelieu.github.io/jp-lazy-guide/setup/>).
+android:	|
+	To mine on Android, you can follow xelieu's [Yomitan on Android guide](<https://xelieu.github.io/jp-lazy-guide/setupYomitanOnAndroid/>) followed by his other guides on mining for Android specifically.
+kaishi:	|
+	The Anki deck recommended for beginners to start their Japanese learning journey is [Kaishi 1.5k](<https://github.com/donkuri/Kaishi/>). You can find the latest release [on ankiweb](<https://ankiweb.net/shared/info/1196762551>) or directly [on GitHub](<https://github.com/donkuri/Kaishi/releases>).
+recs:	|
+	We have a list of recommendations for immersion and each medium ordered by difficulty that you can find on [this spreadsheet](<https://docs.google.com/spreadsheets/d/1w42HEKEu2AzZg9K7PI0ma9ICmr2qYEKQ9IF4XxFSnQU>). If you would like to contribute, please ask kuri or fill [this form](https://docs.google.com/forms/d/e/1FAIpQLSdVcZDnesJPW1oFZ79aY2w-DrrxPgGqbUi0xjc4dvluCcEnGg/viewform).
+resources:	|
+	There are many resources you can use in your Japanese learning journey. You can find a list in [this GitHub repository](<https://github.com/donkuri/japanese-resources>).
+writing:	|
+	We usually recommend that learners learn to write kanji after they can already read comfortably. You can find a guide explaining why as well as a writing deck on [animecards](<https://animecards.site/writingjapanese/>).
+immersion-bot:	|
+	We have an immersion bot you can use to log your immersion. To use it, head to <#814947177608118273> and use `/log` with the bot アリス and follow the instructions. If you don't understand how to use it, feel free to ask in <#1292873791164383372>.
+anime:	|
+	You can find a mining setup for anime [here](<https://donkuri.github.io/learn-japanese/mining/#anime-setup>).
+games:	|
+	You can find a mining setup for games [here](<https://donkuri.github.io/learn-japanese/mining/#games-setup>).
+manga:	|
+	You can find a mining setup for manga [here](<https://donkuri.github.io/learn-japanese/mining/#manga-setup>).
+novels:	|
+	You can find a mining setup for (light) novels [here](<https://donkuri.github.io/learn-japanese/mining/#novel-setup>).
+vns:	|
+	You can find a mining setup for visual novels [here](<https://donkuri.github.io/learn-japanese/mining/#visual-novel-setup>).
