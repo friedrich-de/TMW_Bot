@@ -197,14 +197,38 @@ rank_structure:
       effect: "antiocr"
       time_limit: 16000
       decks:
-        - "haard"
+        - "haado"
         - "insane"
         - "jpdb50k"
       deck_range: null
       score_limit: 50
       max_missed: 9
-      command: "k!quiz haard+insane+jpdb50k 50 nd hardcore dauq=1 font=5 atl=16 mmq=9 color=#f173ff size=100 effect=antiocr"
+      command: "k!quiz haado+insane+jpdb50k 50 nd hardcore dauq=1 font=5 atl=16 mmq=9 color=#f173ff size=100 effect=antiocr"
       no_timeout: false
+
+    - name: "TMW Owner"
+      require_role: null
+      combination_rank: false
+      font: "Aoyagi Kouzan Gyousho"
+      font_size: 90
+      rank_to_get: 1314993571647979570
+      foreground: "#f173ff"
+      effect: "antiocr"
+      time_limit: 16000
+      decks:
+        - "n0"
+        - "cope"
+        - "kunyomi1k"
+        - "loli"
+        - "myouji"
+        - "jpdefs"
+        - "places_full"
+      deck_range: null
+      score_limit: 50
+      max_missed: 9
+      command: "k!quiz n0+cope+kunyomi1kfull+loli+myouji+jpdefs+places_full 50 nd hardcore dauq=1 font=7 atl=16 mmq=9 color=#f173ff size=90 effect=antiocr"
+      no_timeout: false
+
 
   1297383002610995272: # Test_Guild
     - name: "Student"
