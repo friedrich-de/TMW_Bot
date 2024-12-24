@@ -207,7 +207,7 @@ Note: No user commands - internal utility module only.
 
 1. Clone the repository
 2. Create a virtual environment and install the requirements with `pip install -r requirements.txt`
-3. Create a `.env` file in the root directory and add the following variables:
+3. Create a copy of `.env.example` and rename it to `.env` in the root directory and modify the following variables:
 
     `TOKEN=YOUR_DISCORD_BOT_TOKEN`
 
@@ -221,7 +221,15 @@ Note: No user commands - internal utility module only.
 
     `TMDB_API_KEY=YOUR_TMDB_API_KEY`
 
-4. Run the bot with `python main.py`
+4. Run the bot with `python main.py`, make sure your bot has [Privledged Message Intents](https://discord.com/developers/docs/events/gateway#privileged-intents)
+5. Run `%sync_global` or `%sync_guild` to create application commands within your server
+
+## How to run on Docker
+
+1. Clone the repository
+2. Build the docker image with `docker build -t discord-tmw-bot .`
+3. Create a copy of `.env.example` and rename it `.env`, modify the variables to fit your environment
+4. `docker compose up -d`
 
 ## Overwrite Settings
 

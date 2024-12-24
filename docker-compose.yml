@@ -1,0 +1,13 @@
+services:
+  tmw-bot:
+    image: discord-tmw-bot
+    environment:
+      - TOKEN
+      - AUTHORIZED_USERS
+      - DEBUG_USER
+      - COMMAND_PREFIX
+      - PATH_TO_DB
+      - TMDB_API_KEY
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
