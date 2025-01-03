@@ -21,6 +21,11 @@ CREATE_USER_GOALS_TABLE = """
 """
 
 CREATE_GOAL_QUERY = """
+    INSERT INTO user_goals (user_id, media_type, goal_type, goal_value, end_date, created_at)
+    VALUES (?, ?, ?, ?, ?, ?);
+"""
+
+CREATE_GOAL_QUERY_DEFAULT = """
     INSERT INTO user_goals (user_id, media_type, goal_type, goal_value, end_date)
     VALUES (?, ?, ?, ?, ?);
 """
@@ -133,13 +138,14 @@ class GoalsCog(commands.Cog):
         media_type='The type of media for which you want to set a goal.',
         goal_type='The type of goal, either points or amount.',
         goal_value='The goal value you want to achieve.',
-        end_date_or_hours='The date you want to achieve the goal by (YYYY-MM-DD format) or number of hours from now.'
+        end_date_or_hours='The date you want to achieve the goal by (YYYY-MM-DD format) or number of hours from now.',
+        start_date='The date you want to start tracking the goal (Either YYYY-MM-DD or YYYY-MM-DD HH:MM format). Do note that YYYY-MM-DD format will set the start time to 0:00 UTC.'
     )
     @discord.app_commands.choices(goal_type=[
         discord.app_commands.Choice(name='Points', value='points'),
         discord.app_commands.Choice(name='Amount', value='amount')],
         media_type=LOG_CHOICES)
-    async def log_set_goal(self, interaction: discord.Interaction, media_type: str, goal_type: str, goal_value: int, end_date_or_hours: str):
+    async def log_set_goal(self, interaction: discord.Interaction, media_type: str, goal_type: str, goal_value: int, end_date_or_hours: str, start_date: Optional[str]):
         if not await is_valid_channel(interaction):
             return await interaction.response.send_message("You can only use this command in DM or in the log channels.", ephemeral=True)
         try:
@@ -153,7 +159,23 @@ class GoalsCog(commands.Cog):
         except ValueError:
             return await interaction.response.send_message("Invalid input. Please use either a number of hours or a date in YYYY-MM-DD format.", ephemeral=True)
 
-        await self.bot.RUN(CREATE_GOAL_QUERY, (interaction.user.id, media_type, goal_type, goal_value, end_date_dt.strftime('%Y-%m-%d %H:%M:%S')))
+        if start_date:
+            try:
+                try:
+                    start_date_dt = datetime.strptime(start_date, '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc)
+                except ValueError:
+                    start_date_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                if start_date_dt > end_date_dt:
+                    return await interaction.response.send_message("The start date must be before the end date.", ephemeral=True)
+            except ValueError:
+                return await interaction.response.send_message("Invalid input. Please use a date in YYYY-MM-DD or YYYY-MM-DD HH:MM format.", ephemeral=True)
+        else:
+            start_date_dt = None
+        
+        if start_date_dt == None:
+            await self.bot.RUN(CREATE_GOAL_QUERY_DEFAULT, (interaction.user.id, media_type, goal_type, goal_value, end_date_dt.strftime('%Y-%m-%d %H:%M:%S')))
+        else:
+            await self.bot.RUN(CREATE_GOAL_QUERY, (interaction.user.id, media_type, goal_type, goal_value, end_date_dt.strftime('%Y-%m-%d %H:%M:%S'), start_date_dt.strftime('%Y-%m-%d %H:%M:%S')))
 
         unit_name = MEDIA_TYPES[media_type]['unit_name'] if goal_type == 'amount' else 'points'
         timestamp = int(end_date_dt.timestamp())
@@ -161,6 +183,8 @@ class GoalsCog(commands.Cog):
         embed.add_field(name="Media Type", value=media_type, inline=True)
         embed.add_field(name="Goal Type", value=goal_type.capitalize(), inline=True)
         embed.add_field(name="Goal Value", value=f"{goal_value} {unit_name}{'s' if goal_value > 1 else ''}", inline=True)
+        if start_date:
+            embed.add_field(name="Start Date", value=f"<t:{int(start_date_dt.timestamp())}:R>", inline=True)
         embed.add_field(name="End Date", value=f"<t:{timestamp}:R>", inline=True)
         embed.set_footer(text=f"Goal set by {interaction.user.display_name}", icon_url=interaction.user.display_avatar.url)
         await interaction.response.send_message(embed=embed)

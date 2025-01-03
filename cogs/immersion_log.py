@@ -14,7 +14,7 @@ import csv
 import humanize
 
 from typing import Optional
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from discord.ext import commands
 from discord.ext import tasks
 
@@ -160,7 +160,7 @@ class ImmersionLog(commands.Cog):
         amount='Amount. For time-based logs, use the number of minutes.',
         name='You can use VNDB ID/Title for VNs, AniList ID/Titlefor Anime/Manga, TMDB titles for Listening or provide free text.',
         comment='Short comment about your log.',
-        backfill_date='The date for the log, in YYYY-MM-DD format. You can log no more than 7 days into the past.'
+        backfill_date='The date for the log, in YYYY-MM-DD or YYYY-MM-DD HH:MM format. You can log no more than 7 days into the past.'
     )
     @discord.app_commands.choices(media_type=LOG_CHOICES)
     @discord.app_commands.autocomplete(name=log_name_autocomplete)
@@ -191,10 +191,13 @@ class ImmersionLog(commands.Cog):
             log_date = discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         else:
             try:
-                log_date = datetime.strptime(backfill_date, '%Y-%m-%d')
+                try:
+                    log_date = datetime.strptime(backfill_date, '%Y-%m-%d %H:%M')
+                except ValueError:
+                    log_date = datetime.strptime(backfill_date, '%Y-%m-%d')
                 today = discord.utils.utcnow().date()
                 if log_date.date() > today:
-                    return await interaction.response.send_message("You cannot log a date in the future.", ephemeral=True)
+                    return await interaction.response.send_message("You cannot backfill a date in the future.", ephemeral=True)
                 if (today - log_date.date()).days > 7:
                     return await interaction.response.send_message("You cannot log a date more than 7 days in the past.", ephemeral=True)
                 log_date = log_date.strftime('%Y-%m-%d %H:%M:%S')
