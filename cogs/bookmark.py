@@ -202,6 +202,7 @@ class Bookmarks(commands.Cog):
         await interaction.edit_original_response(embed=leaderboard_embed)
 
     @discord.app_commands.command(name="checkbookmarks", description="Check and remove deleted messages from bookmark leaderboard")
+    @discord.app_commands.guild_only()
     @discord.app_commands.default_permissions(administrator=True)
     async def check_bookmarked_messages(self, interaction: discord.Interaction):
         await interaction.response.defer(thinking=True)
