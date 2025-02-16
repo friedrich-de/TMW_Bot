@@ -239,22 +239,14 @@ class LevelUp(commands.Cog):
     async def is_on_cooldown(self, message: discord.Message, quiz_name, rank_has_cooldown):
         if not rank_has_cooldown:
             return False
-        last_attempt = await self.bot.GET_ONE(GET_LAST_QUIZ_ATTEMPT, (message.guild.id, message.author.id, quiz_name))
-        if not last_attempt:
-            return False
-        quiz_name, last_attempt_time = last_attempt
-        last_attempt_time = datetime.fromisoformat(last_attempt_time)
 
-        now = utcnow()
-        delta = (now.weekday() + 1) % 7
-        last_sunday = datetime(now.year, now.month, now.day) - timedelta(days=delta)
-        if last_attempt_time >= last_sunday:
-            next_attempt_time = last_sunday + timedelta(days=7)
-            unix_timestamp = int(next_attempt_time.timestamp())
+        next_attempt_timestamp = await self.get_next_attempt_time(message.guild.id, message.author.id, quiz_name)
 
+        if next_attempt_timestamp is not None:
             await message.channel.send(
-                f"{message.author.mention} You can only attempt this quiz once every week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
+                f"{message.author.mention} You can only attempt this quiz once every week. Your next attempt will be available <t:{next_attempt_timestamp}:R> (on <t:{next_attempt_timestamp}:F>).")
             return True
+        return False
 
     async def register_quiz_attempt(self, member: discord.Member, channel: discord.TextChannel, quiz_name):
         await self.bot.RUN(ADD_QUIZ_ATTEMPT, (member.guild.id, member.id, quiz_name, utcnow()))
