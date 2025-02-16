@@ -244,12 +244,16 @@ class LevelUp(commands.Cog):
             return False
         quiz_name, last_attempt_time = last_attempt
         last_attempt_time = datetime.fromisoformat(last_attempt_time)
-        if last_attempt_time + timedelta(days=6) > utcnow():
-            next_attempt_time = last_attempt_time + timedelta(days=6)
+
+        now = utcnow()
+        delta = (now.weekday() + 1) % 7
+        last_sunday = datetime(now.year, now.month, now.day) - timedelta(days=delta)
+        if last_attempt_time >= last_sunday:
+            next_attempt_time = last_sunday + timedelta(days=7)
             unix_timestamp = int(next_attempt_time.timestamp())
 
             await message.channel.send(
-                f"{message.author.mention} You can only attempt this quiz once every 6 days. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
+                f"{message.author.mention} You can only attempt this quiz once every week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
             return True
 
     async def register_quiz_attempt(self, member: discord.Member, channel: discord.TextChannel, quiz_name):
