@@ -333,8 +333,16 @@ class LevelUp(commands.Cog):
 
         quiz_name, last_attempt_time = last_attempt
         last_attempt_time = datetime.fromisoformat(last_attempt_time)
-        next_attempt_time = last_attempt_time + timedelta(days=6)
-        return int(next_attempt_time.timestamp())
+
+        now = utcnow()
+        delta = (now.weekday() + 1) % 7
+        last_sunday = datetime(now.year, now.month, now.day) - timedelta(days=delta)
+
+        if last_attempt_time >= last_sunday:
+            next_attempt_time = last_sunday + timedelta(days=7)
+            return int(next_attempt_time.timestamp())
+
+        return None
 
     @commands.Cog.listener(name="on_message")
     async def level_up_routine(self, message: discord.Message):
