@@ -198,6 +198,10 @@ async def delete_inactive_threads(channel: discord.TextChannel):
         last_message = thread.last_message
         if not last_message:
             last_message_id = thread.last_message_id
+
+            if not last_message_id:
+                continue
+
             async with thread_deletion_lock:
                 await asyncio.sleep(1)
                 last_message = await thread.fetch_message(last_message_id)
