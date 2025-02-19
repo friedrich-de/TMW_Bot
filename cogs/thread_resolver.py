@@ -20,10 +20,15 @@ async def _get_channel(bot: TMWBot, channel_id: int) -> discord.TextChannel:
 
 
 async def _get_message(bot: TMWBot, channel_id: int, message_id: int) -> discord.Message:
+    if not message_id:
+        return None
     channel = await _get_channel(bot, channel_id)
     message = discord.utils.get(bot.cached_messages, id=message_id)
     if not message:
-        message = await channel.fetch_message(message_id)
+        try:
+            message = await channel.fetch_message(message_id)
+        except discord.NotFound:
+            return None
     return message
 
 
@@ -78,6 +83,9 @@ class Resolver(commands.Cog):
                 if "[SOLVED]" in thread.name or thread.archived:
                     continue
                 last_message = await _get_message(self.bot, thread.id, thread.last_message_id)
+                if not last_message:
+                    if discord.utils.utcnow() - thread.created_at > timedelta(hours=24):
+                        await thread.send(f'{thread.owner.mention} has your problem been solved? If so, do  ``/solved`` to close this thread.')
                 if discord.utils.utcnow() - last_message.created_at > timedelta(hours=24):
                     await thread.send(f'{thread.owner.mention} has your problem been solved? If so, do  ``/solved`` to close this thread.')
 
