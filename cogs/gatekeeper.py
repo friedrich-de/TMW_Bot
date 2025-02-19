@@ -356,7 +356,7 @@ class LevelUp(commands.Cog):
             return False
 
         if is_in_levelup_channel and not is_valid_quiz:
-            await message.channel.send(f"{message.author.mention} Please use the exact quiz command in the level-up channel.")
+            await message.channel.send(f"{message.author.mention} Please copy and paste the command **exactly** and try again.")
             await timeout_member(message.author, 2, "Invalid quiz attempt.")
             return False
 
