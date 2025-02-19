@@ -117,7 +117,7 @@ async def query_vndb(interaction: discord.Interaction, current_input: str, bot: 
                     if not title or not vndb_id:
                         continue
 
-                    choice_name = f"{title[:80]} (ID: {vndb_id}) (API)"
+                    choice_name = f"{title[:80]} (ID: {vndb_id}) (API)"[:100]
                     if title:
                         choices.append(discord.app_commands.Choice(name=choice_name, value=str(vndb_id)))
 
@@ -142,7 +142,7 @@ async def vn_name_autocomplete(interaction: discord.Interaction, current_input: 
         cached_result = await tmw_bot.GET_ONE(CACHED_VNDB_RESULTS_BY_ID_QUERY, (f"v{current_input}",))
         if cached_result:
             vndb_id, title, _ = cached_result
-            choice_name = f"{title[:80]} (ID: {vndb_id}) (Cached)"
+            choice_name = f"{title[:80]} (ID: {vndb_id}) (Cached)"[:100]
             return [discord.app_commands.Choice(name=choice_name, value=str(vndb_id))]
         else:
             return await query_vndb(interaction, current_input, tmw_bot)
@@ -151,7 +151,7 @@ async def vn_name_autocomplete(interaction: discord.Interaction, current_input: 
         choices = []
         for cached_result in cached_results:
             vndb_id, title, _ = cached_result
-            choice_name = f"{title[:80]} (ID: {vndb_id}) (Cached)"
+            choice_name = f"{title[:80]} (ID: {vndb_id}) (Cached)"[:100]
             choices.append(discord.app_commands.Choice(name=choice_name, value=str(vndb_id)))
 
         if len(choices) < 1:

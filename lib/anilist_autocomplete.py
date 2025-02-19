@@ -158,7 +158,7 @@ async def query_anilist(interaction: discord.Interaction, current_input: str, bo
                     if not title or not media_id:
                         continue
 
-                    choice_name = f"{title[:80]} (ID: {media_id}) (API)"
+                    choice_name = f"{title[:80]} (ID: {media_id}) (API)"[:100]
                     if title:
                         choices.append(discord.app_commands.Choice(name=choice_name, value=str(media_id)))
 
@@ -185,7 +185,7 @@ async def anime_manga_name_autocomplete(interaction: discord.Interaction, curren
             anilist_id, title_english, title_native, _ = cached_result
             title = title_english or title_native
             if title:
-                choice_name = f"{title[:80]} (ID: {anilist_id}) (Cached)"
+                choice_name = f"{title[:80]} (ID: {anilist_id}) (Cached)"[:100]
                 return [discord.app_commands.Choice(name=choice_name, value=str(anilist_id))]
         else:
             return await query_anilist(interaction, current_input, tmw_bot)
@@ -196,7 +196,7 @@ async def anime_manga_name_autocomplete(interaction: discord.Interaction, curren
             anilist_id, title_english, title_native, _ = cached_result
             title = title_english or title_native
             if title:
-                choice_name = f"{title[:80]} (ID: {anilist_id}) (Cached)"
+                choice_name = f"{title[:80]} (ID: {anilist_id}) (Cached)"[:100]
                 choices.append(discord.app_commands.Choice(name=choice_name, value=str(anilist_id)))
 
         if len(choices) < 1:

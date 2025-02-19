@@ -115,7 +115,7 @@ async def query_tmdb(interaction: discord.Interaction, current_input: str, bot: 
                     if not title or not media_id:
                         continue
 
-                    choice_name = f"{title[:80]} (ID: {media_id}) (API)"
+                    choice_name = f"{title[:80]} (ID: {media_id}) (API)"[:100]
                     if title:
                         choices.append(discord.app_commands.Choice(name=choice_name, value=str(media_id)))
 
@@ -138,7 +138,7 @@ async def listening_autocomplete(interaction: discord.Interaction, current_input
     choices = []
     for cached_result in cached_results:
         tmdb_id, title, original_title, _, _ = cached_result
-        choice_name = f"{title[:80]} (ID: {tmdb_id}) (Cached)"
+        choice_name = f"{title[:80]} (ID: {tmdb_id}) (Cached)"[:100]
         choices.append(discord.app_commands.Choice(name=choice_name, value=str(tmdb_id)))
 
     if len(choices) < 1:
