@@ -56,13 +56,7 @@ class Resolver(commands.Cog):
             await interaction.response.send_message(f'{interaction.user.mention} closed the thread.')
         else:
             await interaction.response.send_message("This thread is already marked as solved.", ephemeral=True)
-        new_thread_name = "[SOLVED] " + \
-            interaction.channel.name if not "[SOLVED]" in interaction.channel.name else interaction.channel.name
-
-        if len(new_thread_name) > 100:
-            new_thread_name = new_thread_name[:97] + "..."
-
-        await interaction.channel.edit(reason=f'Marked as solved by {interaction.user}', name=new_thread_name, archived=True)
+        await self.mark_thread_as_solved(interaction.channel)
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
@@ -74,20 +68,43 @@ class Resolver(commands.Cog):
             await asyncio.sleep(3)
         await thread.send(f'{thread.owner.mention} Please use the `/solved` command once your problem has been solved.')
 
+    async def mark_thread_as_solved(self, thread: discord.Thread):
+        new_thread_name = "[SOLVED] " + thread.name if not "[SOLVED]" in thread.name else thread.name
+
+        if len(new_thread_name) > 100:
+            new_thread_name = new_thread_name[:97] + "..."
+
+        await thread.edit(reason=f'Marked as solved.', name=new_thread_name, archived=True)
+
     async def ask_if_solved_for_guild(self, guild: discord.Guild):
         question_forums = await self.get_guild_help_forums(guild.id)
         if not question_forums:
             return
         for question_forum in question_forums:
             for thread in question_forum.threads:
-                if "[SOLVED]" in thread.name or thread.archived:
+
+                if "[SOLVED]" in thread.name and not thread.archived:
+                    await self.mark_thread_as_solved(thread)
                     continue
+
+                elif thread.archived and "[SOLVED]" not in thread.name:
+                    await self.mark_thread_as_solved(thread)
+                    continue
+
+                elif thread.archived and "[SOLVED]" in thread.name:
+                    continue
+
                 last_message = await _get_message(self.bot, thread.id, thread.last_message_id)
                 if not last_message:
-                    if discord.utils.utcnow() - thread.created_at > timedelta(hours=24):
-                        await thread.send(f'{thread.owner.mention} has your problem been solved? If so, do  ``/solved`` to close this thread.')
-                if discord.utils.utcnow() - last_message.created_at > timedelta(hours=24):
+                    if discord.utils.utcnow() - thread.created_at > timedelta(days=30):
+                        await self.mark_thread_as_solved(thread)
+                    continue
+                if discord.utils.utcnow() - last_message.created_at > timedelta(days=30):
+                    await self.mark_thread_as_solved(thread)
+                    continue
+                if discord.utils.utcnow() - last_message.created_at > timedelta(hours=48):
                     await thread.send(f'{thread.owner.mention} has your problem been solved? If so, do  ``/solved`` to close this thread.')
+                    continue
 
     @tasks.loop(hours=1)
     async def ask_if_solved(self):
