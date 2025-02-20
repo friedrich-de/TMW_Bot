@@ -67,6 +67,13 @@ class TMWBot(commands.Bot):
                 row = await cursor.fetchone()
                 return row
 
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        if isinstance(error, commands.CommandNotFound):
+            _log.info(f"Command by user {ctx.author.name} not found: {ctx.message.content}")
+            return
+
+        raise error
+
     async def on_application_command_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
         if isinstance(error, discord.app_commands.MissingAnyRole):
             await interaction.response.send_message("You do not have the permission to use this command.", ephemeral=True)
