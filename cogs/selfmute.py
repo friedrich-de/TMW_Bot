@@ -142,7 +142,10 @@ class Selfmute(commands.Cog):
 
             await self.perform_mute(interaction.user, mute_role, unmute_time)
             await interaction.followup.send(mute_message + role_message, ephemeral=True)
-            await interaction.user.send(mute_message)
+            try:
+                await interaction.user.send(mute_message)
+            except discord.Forbidden:
+                pass
 
         my_view = discord.ui.View()
         my_select = discord.ui.Select()

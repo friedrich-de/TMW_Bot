@@ -66,6 +66,8 @@ class Resolver(commands.Cog):
             return
         while not thread.last_message_id:
             await asyncio.sleep(3)
+        if not thread.owner:
+            return
         await thread.send(f'{thread.owner.mention} Please use the `/solved` command once your problem has been solved.')
 
     async def mark_thread_as_solved(self, thread: discord.Thread):
@@ -100,6 +102,9 @@ class Resolver(commands.Cog):
                         await self.mark_thread_as_solved(thread)
                     continue
                 if discord.utils.utcnow() - last_message.created_at > timedelta(days=30):
+                    await self.mark_thread_as_solved(thread)
+                    continue
+                if not thread.owner:
                     await self.mark_thread_as_solved(thread)
                     continue
                 if discord.utils.utcnow() - last_message.created_at > timedelta(hours=48):
