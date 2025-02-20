@@ -147,6 +147,7 @@ def generate_bar_chart(df: pd.DataFrame, from_date: datetime, to_date: datetime,
 
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png', facecolor=fig.get_facecolor(), bbox_inches='tight')
+    plt.close()  # Close the figure
     buffer.seek(0)
 
     return buffer
@@ -202,6 +203,7 @@ def generate_heatmap(df: pd.DataFrame, from_date: datetime, to_date: datetime, i
 
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png', facecolor=fig.get_facecolor(), bbox_inches='tight')
+    plt.close()
     buffer.seek(0)
 
     return buffer
