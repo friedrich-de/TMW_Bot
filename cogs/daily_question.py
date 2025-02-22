@@ -121,7 +121,7 @@ class DailyQuestion(commands.Cog):
             await channel.send(embed=embed)
 
         except Exception as e:
-            print(f"Error generating daily question: {e}")
+            raise
 
     @tasks.loop(minutes=1)
     async def check_daily_questions(self):

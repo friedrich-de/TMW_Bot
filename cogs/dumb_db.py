@@ -29,7 +29,7 @@ class DatabasePoster(commands.Cog):
             temp_file_path = await asyncio.to_thread(create_temporary_gzip_file)
             await interaction.followup.send(file=discord.File(temp_file_path, filename="db.sqlite3.gz"))
         except Exception as e:
-            await interaction.followup.send(f"An error occurred: {e}"[:2000])
+            raise
         finally:
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)

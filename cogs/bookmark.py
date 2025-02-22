@@ -219,7 +219,7 @@ class Bookmarks(commands.Cog):
                 await self.bot.RUN(DELETE_BOOKMARKED_MESSAGE_QUERY, (interaction.guild.id, message_id))
                 removed_count += 1
             except Exception as e:
-                continue
+                raise
 
         await interaction.edit_original_response(
             content=f"Cleanup complete. Removed {removed_count} deleted messages from bookmarks.")

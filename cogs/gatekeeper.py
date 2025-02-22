@@ -204,15 +204,21 @@ async def delete_inactive_threads(channel: discord.TextChannel):
 
             async with thread_deletion_lock:
                 await asyncio.sleep(1)
-                last_message = await thread.fetch_message(last_message_id)
+                try:
+                    last_message = await thread.fetch_message(last_message_id)
+                except discord.NotFound:
+                    last_message = None
 
-        if not last_message:
+        if not last_message and thread.created_at < utcnow() - timedelta(days=14):
+            async with thread_deletion_lock:
+                await asyncio.sleep(60)
+                await thread.delete(reason="Thread inactive.")
             continue
 
-        if last_message.created_at < utcnow() - timedelta(minutes=20):
+        if last_message.created_at < utcnow() - timedelta(days=14):
             async with thread_deletion_lock:
-                await asyncio.sleep(5)
-                await thread.delete(reason="Thread inactive for over 20 minutes.")
+                await asyncio.sleep(60)
+                await thread.delete(reason="Thread inactive.")
 
 
 class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]], template=r"quizmenu-guild:(?P<guild_id>\d+)"):
@@ -275,13 +281,23 @@ class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]]
         if quiz_thread_record:
             thread_id = quiz_thread_record[0]
             quiz_thread = interaction.guild.get_thread(thread_id)
-        if quiz_thread is None:
+
+        if not quiz_thread:
+            try:
+                quiz_thread = await interaction.guild.fetch_channel(thread_id)
+            except discord.NotFound:
+                quiz_thread = None
+
+        if not quiz_thread:
             quiz_thread = await interaction.channel.create_thread(
                 name=f"{interaction.user.name} - Quiz"[:100],
                 auto_archive_duration=60,
                 reason='Quiz Thread'
             )
             await self.levelup.bot.RUN(ADD_USER_THREAD, (interaction.user.id, quiz_thread.id))
+
+        if quiz_thread.locked or quiz_thread.archived:
+            await quiz_thread.edit(locked=False, archived=False)
 
         kotoba_bot_user = interaction.guild.get_member(KOTOBA_BOT_ID)
         if not kotoba_bot_user:
