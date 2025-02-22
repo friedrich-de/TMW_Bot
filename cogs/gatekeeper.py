@@ -281,12 +281,11 @@ class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]]
         if quiz_thread_record:
             thread_id = quiz_thread_record[0]
             quiz_thread = interaction.guild.get_thread(thread_id)
-
-        if not quiz_thread:
-            try:
-                quiz_thread = await interaction.guild.fetch_channel(thread_id)
-            except discord.NotFound:
-                quiz_thread = None
+            if not quiz_thread:
+                try:
+                    quiz_thread = await interaction.guild.fetch_channel(thread_id)
+                except discord.NotFound:
+                    quiz_thread = None
 
         if not quiz_thread:
             quiz_thread = await interaction.channel.create_thread(
