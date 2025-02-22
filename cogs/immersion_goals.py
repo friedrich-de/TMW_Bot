@@ -171,7 +171,7 @@ class GoalsCog(commands.Cog):
                 return await interaction.response.send_message("Invalid input. Please use a date in YYYY-MM-DD or YYYY-MM-DD HH:MM format.", ephemeral=True)
         else:
             start_date_dt = None
-        
+
         if start_date_dt == None:
             await self.bot.RUN(CREATE_GOAL_QUERY_DEFAULT, (interaction.user.id, media_type, goal_type, goal_value, end_date_dt.strftime('%Y-%m-%d %H:%M:%S')))
         else:
@@ -212,7 +212,7 @@ class GoalsCog(commands.Cog):
 
     @discord.app_commands.command(name='log_view_goals', description='View your current goals or the goals of another user.')
     @discord.app_commands.describe(member='The member whose goals you want to view (optional).')
-    async def log_view_goals(self, interaction: discord.Interaction, member: Optional[discord.Member]):
+    async def log_view_goals(self, interaction: discord.Interaction, member: Optional[discord.User]):
         member = member or interaction.user
         user_goals = await self.bot.GET(GET_USER_GOALS_QUERY, (member.id,))
 
