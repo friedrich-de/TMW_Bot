@@ -126,7 +126,7 @@ class Kneels(commands.Cog):
         await interaction.response.defer(thinking=f'Kneeling...')
         leaderboard_data = await self.bot.GET(GET_TOP_KNEELS_QUERY, (guild_id or interaction.guild.id,))
         if not leaderboard_data:
-            return await interaction.edit_original_response(content="No kneels found for provided guild id.")
+            return await interaction.followup.send("No kneels found for provided guild id.")
 
         ikneel_emoji = discord.utils.get(interaction.guild.emojis, name="ikneel")
         if not ikneel_emoji:
@@ -144,7 +144,7 @@ class Kneels(commands.Cog):
         except (TypeError, IndexError):
             leaderboard_embed.add_field(name="Your Kneels", value=f"0 {ikneel_emoji}", inline=True)
 
-        await interaction.edit_original_response(embed=leaderboard_embed)
+        await interaction.followup.send(embed=leaderboard_embed)
 
 
 async def setup(bot):

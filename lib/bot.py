@@ -105,7 +105,7 @@ class TMWBot(commands.Bot):
         if not interaction.response.is_done():
             await interaction.response.send_message("An error occurred while processing your command:", embed=error_embed)
         else:
-            await interaction.edit_original_response(content="An error occurred while processing your command:", embed=error_embed)
+            await interaction.followup.send("An error occurred while processing your command:", embed=error_embed)
 
     async def on_error(self, event_method, *args, **kwargs):
         _log.exception('Ignoring exception in %s', event_method)

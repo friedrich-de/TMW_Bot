@@ -184,7 +184,7 @@ class Bookmarks(commands.Cog):
 
         leaderboard_data = await self.bot.GET(GET_TOP_BOOKMARKS_QUERY, (interaction.guild.id,))
         if not leaderboard_data:
-            return await interaction.edit_original_response(content="No bookmarked messages found.")
+            return await interaction.followup.send("No bookmarked messages found.")
 
         leaderboard_embed = discord.Embed(
             title="Most Bookmarked Messages",
@@ -199,7 +199,7 @@ class Bookmarks(commands.Cog):
                 inline=False
             )
 
-        await interaction.edit_original_response(embed=leaderboard_embed)
+        await interaction.followup.send(embed=leaderboard_embed)
 
     @discord.app_commands.command(name="checkbookmarks", description="Check and remove deleted messages from bookmark leaderboard")
     @discord.app_commands.guild_only()
@@ -209,7 +209,7 @@ class Bookmarks(commands.Cog):
 
         leaderboard_data = await self.bot.GET(GET_TOP_BOOKMARKS_QUERY, (interaction.guild.id,))
         if not leaderboard_data:
-            return await interaction.edit_original_response(content="No bookmarked messages found.")
+            return await interaction.followup.send("No bookmarked messages found.")
 
         removed_count = 0
         for channel_id, message_id, author_id, message_link, _ in leaderboard_data:
@@ -221,8 +221,7 @@ class Bookmarks(commands.Cog):
             except Exception as e:
                 raise
 
-        await interaction.edit_original_response(
-            content=f"Cleanup complete. Removed {removed_count} deleted messages from bookmarks.")
+        await interaction.followup.send(f"Cleanup complete. Removed {removed_count} deleted messages from bookmarks.")
 
 
 async def setup(bot):
