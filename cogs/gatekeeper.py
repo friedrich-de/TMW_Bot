@@ -192,35 +192,6 @@ def get_next_sunday_midnight_from(dt):
     next_sunday_midnight = datetime(next_sunday.year, next_sunday.month, next_sunday.day, 0, 0, 0, tzinfo=timezone.utc)
     return next_sunday_midnight
 
-
-async def delete_inactive_threads(channel: discord.TextChannel):
-    for thread in channel.threads:
-        last_message = thread.last_message
-        if not last_message:
-            last_message_id = thread.last_message_id
-
-            if not last_message_id:
-                continue
-
-            async with thread_deletion_lock:
-                await asyncio.sleep(1)
-                try:
-                    last_message = await thread.fetch_message(last_message_id)
-                except discord.NotFound:
-                    last_message = None
-
-        if not last_message and thread.created_at < utcnow() - timedelta(days=14):
-            async with thread_deletion_lock:
-                await asyncio.sleep(60)
-                await thread.delete(reason="Thread inactive.")
-            continue
-
-        if last_message.created_at < utcnow() - timedelta(days=14):
-            async with thread_deletion_lock:
-                await asyncio.sleep(60)
-                await thread.delete(reason="Thread inactive.")
-
-
 class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]], template=r"quizmenu-guild:(?P<guild_id>\d+)"):
     def __init__(self, levelup: "LevelUp", guild_id: int):
         self.levelup = levelup
@@ -321,19 +292,6 @@ class LevelUp(commands.Cog):
         await self.bot.RUN(CREATE_USER_THREADS_TABLE)
 
         self.bot.add_dynamic_items(DynamicQuizMenu)
-        self.inactive_quiz_thread_deleter.start()
-
-    @tasks.loop(minutes=1)
-    async def inactive_quiz_thread_deleter(self):
-        for guild_id in gatekeeper_settings['rank_settings']:
-            guild = self.bot.get_guild(guild_id)
-            if not guild:
-                continue
-            channel_id = gatekeeper_settings['rank_settings'][guild_id]['quiz_channel']
-            channel = guild.get_channel(channel_id)
-            if not channel:
-                continue
-            await delete_inactive_threads(channel)
 
     async def is_in_levelup_channel(self, message: discord.Message):
         thread_id = await self.bot.GET_ONE(GET_USER_THREAD, (message.author.id,))
