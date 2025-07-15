@@ -5,11 +5,14 @@ import aiohttp
 import asyncio
 import yaml
 import os
+import logging
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands, tasks
 from discord.utils import utcnow
 
+
+_log = logging.getLogger(__name__)
 
 KOTOBA_BOT_ID = 251239170058616833
 
@@ -169,13 +172,15 @@ thread_deletion_lock = asyncio.Lock()
 
 
 async def extract_quiz_result_from_id(quiz_id):
+    jsonurl = f"https://kotobaweb.com/api/game_reports/{quiz_id}"
     async with kotoba_request_lock:
-        await asyncio.sleep(2)
-        jsonurl = f"https://kotobaweb.com/api/game_reports/{quiz_id}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(jsonurl) as resp:
-                return await resp.json()
-
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(jsonurl) as resp:
+                    return await resp.json()
+        except aiohttp.ClientConnectorDNSError:
+            _log.warning(f"Failed to connect to Kotoba API for quiz ID {quiz_id}.")
+            return None
 
 async def timeout_member(member: discord.Member, duration_in_minutes: int, reason: str):
     try:
@@ -456,7 +461,7 @@ class LevelUp(commands.Cog):
         if not message.guild:
             return
 
-        if not message.author.id == KOTOBA_BOT_ID and not 'k!q' in message.content.lower():
+        if not message.author.id == KOTOBA_BOT_ID and 'k!q' not in message.content.lower():
             return
 
         is_valid_command = await self.is_command_input_valid(message)
@@ -468,6 +473,9 @@ class LevelUp(commands.Cog):
             return
 
         quiz_result = await extract_quiz_result_from_id(quiz_id)
+        if not quiz_result:
+            await message.channel.send(f"{message.author.mention} Failed to retrieve quiz results... if you passed, please contact a moderator/admin.")
+            return
         quiz_data = await self.get_corresponding_quiz_data(message, quiz_result)
         if not quiz_data:
             return
