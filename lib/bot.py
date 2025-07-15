@@ -39,6 +39,12 @@ class TMWBot(commands.Bot):
                 await db.execute(query, params)
                 await db.commit()
 
+    async def RUN_MANY(self, query: str, rows: list[tuple]):
+        async with self._db_lock:
+            async with aiosqlite.connect(self.path_to_db) as db:
+                await db.executemany(query, rows)
+                await db.commit()
+
     async def GET(self, query: str, params: tuple = ()):
         async with aiosqlite.connect(self.path_to_db) as db:
             async with db.execute(query, params) as cursor:
