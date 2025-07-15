@@ -63,8 +63,7 @@ GET_USER_THREAD = """SELECT thread_id FROM user_threads WHERE user_id = ?;"""
 
 
 async def quiz_autocomplete(interaction: discord.Interaction, current_input: str):
-    rank_names = [quiz['name'] for quiz in gatekeeper_settings['rank_structure']
-                  [interaction.guild.id] if quiz["combination_rank"] is False and quiz["no_timeout"] is False]
+    rank_names = [quiz["name"] for quiz in gatekeeper_settings["rank_structure"][interaction.guild.id] if quiz["combination_rank"] is False and quiz["no_timeout"] is False]
     possible_choices = [discord.app_commands.Choice(name=rank_name, value=rank_name) for rank_name in rank_names]
     return possible_choices[0:25]
 
@@ -151,9 +150,7 @@ async def verify_quiz_settings(quiz_data, quiz_result, member: discord.Member):
     if answer_count != quiz_result["scores"][0]["score"]:
         return False, f"Not enough questions answered. Score: {quiz_result['scores'][0]['score']} out of {answer_count}."
 
-    return (
-        True,
-        f"{member.mention} has passed the {quiz_data['name']} quiz!")
+    return (True, f"{member.mention} has passed the {quiz_data['name']} quiz!")
 
 
 async def get_quiz_id(message: discord.Message):
@@ -182,6 +179,7 @@ async def extract_quiz_result_from_id(quiz_id):
             _log.warning(f"Failed to connect to Kotoba API for quiz ID {quiz_id}.")
             return None
 
+
 async def timeout_member(member: discord.Member, duration_in_minutes: int, reason: str):
     try:
         await member.timeout(utcnow() + timedelta(minutes=duration_in_minutes), reason=reason)
@@ -197,15 +195,12 @@ def get_next_sunday_midnight_from(dt):
     next_sunday_midnight = datetime(next_sunday.year, next_sunday.month, next_sunday.day, 0, 0, 0, tzinfo=timezone.utc)
     return next_sunday_midnight
 
+
 class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]], template=r"quizmenu-guild:(?P<guild_id>\d+)"):
     def __init__(self, levelup: "LevelUp", guild_id: int):
         self.levelup = levelup
         self.guild_id = guild_id
-        rank_names = [
-            (quiz["name"], quiz.get("emoji"))
-            for quiz in gatekeeper_settings["rank_structure"][guild_id]
-            if quiz["command"]
-        ]
+        rank_names = [(quiz["name"], quiz.get("emoji")) for quiz in gatekeeper_settings["rank_structure"][guild_id] if quiz["command"]]
         super().__init__(
             discord.ui.Select(
                 custom_id=f"quizmenu-guild:{guild_id}",
@@ -236,12 +231,12 @@ class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]]
         assert interaction.data is not None and "custom_id" in interaction.data, "Invalid interaction data"
         rank = self.item.values[0]
         guild_id = interaction.guild.id
-        rank_structure = gatekeeper_settings['rank_structure'][guild_id]
+        rank_structure = gatekeeper_settings["rank_structure"][guild_id]
         quiz_command = None
 
         for quiz in rank_structure:
-            if quiz['name'].lower() == rank.lower():
-                quiz_command = quiz['command']
+            if quiz["name"].lower() == rank.lower():
+                quiz_command = quiz["command"]
                 break
 
         rank_has_cooldown = await self.levelup.rank_has_cooldown(interaction.guild.id, rank)
@@ -265,11 +260,7 @@ class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]]
                 quiz_thread = None
 
         if not quiz_thread:
-            quiz_thread = await interaction.channel.create_thread(
-                name=f"{interaction.user.name} - Quiz"[:100],
-                auto_archive_duration=60,
-                reason='Quiz Thread'
-            )
+            quiz_thread = await interaction.channel.create_thread(name=f"{interaction.user.name} - Quiz"[:100], auto_archive_duration=60, reason="Quiz Thread")
             await self.levelup.bot.RUN(ADD_USER_THREAD, (interaction.user.id, quiz_thread.id))
 
         if quiz_thread.locked or quiz_thread.archived:
@@ -305,7 +296,7 @@ class LevelUp(commands.Cog):
         return False
 
     async def is_restricted_quiz(self, message: discord.Message):
-        restricted_quizzes = gatekeeper_settings['rank_settings'][message.guild.id]['restricted_quiz_names']
+        restricted_quizzes = gatekeeper_settings["rank_settings"][message.guild.id]["restricted_quiz_names"]
         for quiz_name in restricted_quizzes:
             if quiz_name.lower() in message.content.lower():
                 return quiz_name, True
@@ -313,15 +304,15 @@ class LevelUp(commands.Cog):
 
     async def is_valid_quiz(self, message: discord.Message, rank_structure: dict):
         for quiz in rank_structure:
-            if message.content == quiz['command']:
-                return True, quiz['name']
+            if message.content == quiz["command"]:
+                return True, quiz["name"]
         return False, None
 
     async def rank_has_cooldown(self, guild_id: int, rank_name: str):
-        rank_structure = gatekeeper_settings['rank_structure'][guild_id]
+        rank_structure = gatekeeper_settings["rank_structure"][guild_id]
         for rank in rank_structure:
-            if rank['name'] == rank_name:
-                return not rank['no_timeout']
+            if rank["name"] == rank_name:
+                return not rank["no_timeout"]
 
     async def is_command_input_valid(self, message: discord.Message):
         if message.author.bot:
@@ -329,7 +320,7 @@ class LevelUp(commands.Cog):
 
         restricted_quiz_name, is_restricted = await self.is_restricted_quiz(message)
         is_in_levelup_channel = await self.is_in_levelup_channel(message)
-        is_valid_quiz, performed_quiz_name = await self.is_valid_quiz(message, gatekeeper_settings['rank_structure'][message.guild.id])
+        is_valid_quiz, performed_quiz_name = await self.is_valid_quiz(message, gatekeeper_settings["rank_structure"][message.guild.id])
 
         rank_has_cooldown = await self.rank_has_cooldown(message.guild.id, performed_quiz_name)
 
@@ -367,8 +358,7 @@ class LevelUp(commands.Cog):
         next_sunday_midnight = get_next_sunday_midnight_from(last_attempt_time)
         if utcnow() < next_sunday_midnight:
             unix_timestamp = int(next_sunday_midnight.timestamp())
-            await message.channel.send(
-                f"{message.author.mention} You can only attempt this quiz once per week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
+            await message.channel.send(f"{message.author.mention} You can only attempt this quiz once per week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
             return True
         return False
 
@@ -379,10 +369,10 @@ class LevelUp(commands.Cog):
         await channel.send(f"{member.mention} registered attempt for {quiz_name}. You can try again <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>).")
 
     async def get_corresponding_quiz_data(self, message: discord.Message, quiz_result: dict):
-        rank_structure = gatekeeper_settings['rank_structure'][message.guild.id]
+        rank_structure = gatekeeper_settings["rank_structure"][message.guild.id]
         if not quiz_result["decks"][0].get("shortName"):
             return None
-        deck_names = [deck['shortName'] for deck in quiz_result["decks"]]
+        deck_names = [deck["shortName"] for deck in quiz_result["decks"]]
         index_specified = bool(quiz_result["decks"][0].get("startIndex"))
         for rank in rank_structure:
             index_required = rank.get("deck_range", None) is not None
@@ -392,14 +382,14 @@ class LevelUp(commands.Cog):
         return None
 
     async def get_all_quiz_roles(self, guild: discord.Guild):
-        rank_structure = gatekeeper_settings['rank_structure'][guild.id]
-        return [guild.get_role(role['rank_to_get']) for role in rank_structure if role['rank_to_get']]
+        rank_structure = gatekeeper_settings["rank_structure"][guild.id]
+        return [guild.get_role(role["rank_to_get"]) for role in rank_structure if role["rank_to_get"]]
 
     async def reward_user(self, member: discord.Member, quiz_data: dict):
-        await self.bot.RUN(ADD_PASSED_QUIZ, (member.guild.id, member.id, quiz_data['name']))
-        if quiz_data['rank_to_get']:
+        await self.bot.RUN(ADD_PASSED_QUIZ, (member.guild.id, member.id, quiz_data["name"]))
+        if quiz_data["rank_to_get"]:
             roles = [role for role in await self.get_all_quiz_roles(member.guild) if role is not None]
-            role_to_get = member.guild.get_role(quiz_data['rank_to_get'])
+            role_to_get = member.guild.get_role(quiz_data["rank_to_get"])
             await member.remove_roles(*roles)
             await member.add_roles(role_to_get)
             return role_to_get
@@ -407,23 +397,21 @@ class LevelUp(commands.Cog):
             await self.check_if_combination_rank_earned(member)
 
     async def check_if_combination_rank_earned(self, member: discord.Member):
-        rank_structure = gatekeeper_settings['rank_structure'][member.guild.id]
-        combination_ranks = [rank_data for rank_data in rank_structure if rank_data['combination_rank'] is True]
+        rank_structure = gatekeeper_settings["rank_structure"][member.guild.id]
+        combination_ranks = [rank_data for rank_data in rank_structure if rank_data["combination_rank"] is True]
         earned_ranks = await self.bot.GET(GET_PASSED_QUIZZES, (member.guild.id, member.id))
         earned_ranks = [rank[0] for rank in earned_ranks]
         combination_ranks.reverse()
         for rank in combination_ranks:
-
-            if await self.already_owns_higher_or_same_role(rank['rank_to_get'], member):
+            if await self.already_owns_higher_or_same_role(rank["rank_to_get"], member):
                 return
 
-            if all(quiz_name in earned_ranks for quiz_name in rank['quizzes_required']):
+            if all(quiz_name in earned_ranks for quiz_name in rank["quizzes_required"]):
                 role_to_get = await self.reward_user(member, rank)
                 await self.send_in_announcement_channel(member, f"{member.mention} is now a {role_to_get.name}!")
 
     async def send_in_announcement_channel(self, member: discord.Member, message: str):
-        announcement_channel = member.guild.get_channel(
-            gatekeeper_settings['rank_settings'][member.guild.id]['announce_channel'])
+        announcement_channel = member.guild.get_channel(gatekeeper_settings["rank_settings"][member.guild.id]["announce_channel"])
         await announcement_channel.send(message)
 
     async def already_owns_higher_or_same_role(self, rank_to_get_id: int, member: discord.Member):
@@ -431,11 +419,7 @@ class LevelUp(commands.Cog):
         if not role_to_get:
             return False
 
-        all_rank_roles = sorted(
-            [role for role in await self.get_all_quiz_roles(member.guild) if role is not None],
-            key=lambda r: r.position,
-            reverse=True
-        )
+        all_rank_roles = sorted([role for role in await self.get_all_quiz_roles(member.guild) if role is not None], key=lambda r: r.position, reverse=True)
 
         for role in member.roles:
             if role in all_rank_roles and role.position >= role_to_get.position:
@@ -461,7 +445,7 @@ class LevelUp(commands.Cog):
         if not message.guild:
             return
 
-        if not message.author.id == KOTOBA_BOT_ID and 'k!q' not in message.content.lower():
+        if not message.author.id == KOTOBA_BOT_ID and "k!q" not in message.content.lower():
             return
 
         is_valid_command = await self.is_command_input_valid(message)
@@ -484,16 +468,13 @@ class LevelUp(commands.Cog):
 
         success, quiz_message = await verify_quiz_settings(quiz_data, quiz_result, member)
 
-        if await self.already_owns_higher_or_same_role(quiz_data['rank_to_get'], member):
+        if await self.already_owns_higher_or_same_role(quiz_data["rank_to_get"], member):
             return
 
-        if success and quiz_data['require_role']:
-            role_to_have = message.guild.get_role(quiz_data['require_role'])
+        if success and quiz_data["require_role"]:
+            role_to_have = message.guild.get_role(quiz_data["require_role"])
             if role_to_have not in member.roles:
-                await message.channel.send(
-                    f"{member.mention} You need the {role_to_have.mention} role to take this quiz.",
-                    allowed_mentions=discord.AllowedMentions(roles=False)
-                )
+                await message.channel.send(f"{member.mention} You need the {role_to_have.mention} role to take this quiz.", allowed_mentions=discord.AllowedMentions(roles=False))
                 return
 
         if success:
@@ -504,20 +485,18 @@ class LevelUp(commands.Cog):
             except discord.Forbidden:
                 pass
         else:
-            if await self.rank_has_cooldown(message.guild.id, quiz_data['name']):
-                await self.register_quiz_attempt(member, message.channel, quiz_data['name'])
+            if await self.rank_has_cooldown(message.guild.id, quiz_data["name"]):
+                await self.register_quiz_attempt(member, message.channel, quiz_data["name"])
 
                 next_sunday_midnight = get_next_sunday_midnight_from(utcnow())
                 next_attempt = int(next_sunday_midnight.timestamp())
                 if next_attempt:
                     try:
-                        await member.send(
-                            f"Your attempt at the {quiz_data['name']} quiz was unsuccessful: {quiz_message}\n"
-                            f"You can try again <t:{next_attempt}:R> (on <t:{next_attempt}:F>).")
+                        await member.send(f"Your attempt at the {quiz_data['name']} quiz was unsuccessful: {quiz_message}\nYou can try again <t:{next_attempt}:R> (on <t:{next_attempt}:F>).")
                     except discord.Forbidden:
                         pass
 
-    @discord.app_commands.command(name="reset_user_cooldown",  description="Reset a users quiz cooldown.")
+    @discord.app_commands.command(name="reset_user_cooldown", description="Reset a users quiz cooldown.")
     @discord.app_commands.guild_only()
     @discord.app_commands.describe(user="The user to clear the cooldown of.", quiz_to_reset="The quiz to reset the cooldown for.")
     @discord.app_commands.autocomplete(quiz_to_reset=quiz_autocomplete)
@@ -527,22 +506,19 @@ class LevelUp(commands.Cog):
             await self.bot.RUN(RESET_ALL_QUIZ_ATTEMPTS, (interaction.guild.id, user.id))
             await interaction.response.send_message(f"Cleared all quiz cooldown for {user.mention}.")
         else:
-            if not any(quiz_to_reset in rank['name'] for rank in gatekeeper_settings['rank_structure'][interaction.guild.id]):
+            if not any(quiz_to_reset in rank["name"] for rank in gatekeeper_settings["rank_structure"][interaction.guild.id]):
                 await interaction.response.send_message("Invalid quiz name.", ephemeral=True)
                 return
             await self.bot.RUN(RESET_SPECIFIC_QUIZ_ATTEMPTS, (interaction.guild.id, user.id, quiz_to_reset))
             await interaction.response.send_message(f"Cleared quiz cooldown for {user.mention} for `{quiz_to_reset}`.")
 
-    @discord.app_commands.command(name="ranktable",  description="Display the distribution of quiz roles in the server.")
+    @discord.app_commands.command(name="ranktable", description="Display the distribution of quiz roles in the server.")
     @discord.app_commands.guild_only()
     async def ranktable(self, interaction: discord.Interaction):
         quiz_roles = await self.get_all_quiz_roles(interaction.guild)
         total_ranked_members = len(set([member for role in quiz_roles for member in role.members]))
 
-        description = "\n".join([
-            f"{role.mention}: {len(role.members)} ({len(role.members) / total_ranked_members * 100:.2f}%)"
-            for role in quiz_roles
-        ])
+        description = "\n".join([f"{role.mention}: {len(role.members)} ({len(role.members) / total_ranked_members * 100:.2f}%)" for role in quiz_roles])
 
         description += f"\n\nTotal ranked members: {total_ranked_members}"
         description += f"\nTotal member count: {interaction.guild.member_count}"
@@ -574,7 +550,7 @@ class LevelUp(commands.Cog):
         if not guild:
             return "`Unretreivable`"
         else:
-            return guild.get_role(rank['rank_to_get']).mention
+            return guild.get_role(rank["rank_to_get"]).mention
 
     @discord.app_commands.command(name="list_role_commands", description="List all commands required for the quizzes.")
     @discord.app_commands.describe(guild_id="The guild for which to display the role commands.")
@@ -587,36 +563,34 @@ class LevelUp(commands.Cog):
         else:
             guild_id = interaction.guild.id
 
-        rank_structure = gatekeeper_settings['rank_structure'][guild_id]
+        rank_structure = gatekeeper_settings["rank_structure"][guild_id]
 
         rank_command_embed = discord.Embed(title="Rank Commands", color=discord.Color.blurple())
 
         for rank in rank_structure:
-            if rank['command']:
-                next_attempt_time = await self.get_next_attempt_time(guild_id, interaction.user.id, rank['name'])
+            if rank["command"]:
+                next_attempt_time = await self.get_next_attempt_time(guild_id, interaction.user.id, rank["name"])
                 if next_attempt_time and next_attempt_time < int(utcnow().timestamp()):
                     next_attempt_time = None
 
-                description = rank['command'] + "\n"
-                if rank['rank_to_get']:
+                description = rank["command"] + "\n"
+                if rank["rank_to_get"]:
                     rank_to_get = await self.rank_to_get(guild_id, rank)
                     description += f"Reward role: {rank_to_get}\n"
 
-                if next_attempt_time and not rank['combination_rank']:
+                if next_attempt_time and not rank["combination_rank"]:
                     description += f"Cooldown: <t:{next_attempt_time}:R> (on <t:{next_attempt_time}:F>)"
                 else:
                     description += "Cooldown: Not on cooldown."
 
-                if rank['require_role']:
+                if rank["require_role"]:
                     description += f"\nRequired role: {interaction.guild.get_role(rank['require_role']).mention}"
 
-                rank_command_embed.add_field(name=rank['name'], value=description, inline=False)
+                rank_command_embed.add_field(name=rank["name"], value=description, inline=False)
 
-            elif rank['combination_rank']:
+            elif rank["combination_rank"]:
                 rank_to_get = await self.rank_to_get(guild_id, rank)
-                rank_command_embed.add_field(name=rank['name'],
-                                             value=f"Required quizzes: {', '.join(rank['quizzes_required'])}" +
-                                             f"\nReward role: {rank_to_get}", inline=False)
+                rank_command_embed.add_field(name=rank["name"], value=f"Required quizzes: {', '.join(rank['quizzes_required'])}" + f"\nReward role: {rank_to_get}", inline=False)
 
         await interaction.response.send_message(embed=rank_command_embed, ephemeral=True)
 
@@ -631,9 +605,7 @@ class LevelUp(commands.Cog):
         next_sunday_midnight = get_next_sunday_midnight_from(last_attempt_time)
         if utcnow() < next_sunday_midnight:
             unix_timestamp = int(next_sunday_midnight.timestamp())
-            cooldown_message = (
-                f"You can only attempt this quiz once per week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>)."
-            )
+            cooldown_message = f"You can only attempt this quiz once per week. Your next attempt will be available <t:{unix_timestamp}:R> (on <t:{unix_timestamp}:F>)."
             return True, cooldown_message
         return False, None
 
@@ -648,7 +620,7 @@ class LevelUp(commands.Cog):
 
         view = discord.ui.View(timeout=None)
         view.add_item(DynamicQuizMenu(self, interaction.guild.id))
-        quiz_menu_message = gatekeeper_settings['rank_settings'][interaction.guild.id]['quiz_menu_message']
+        quiz_menu_message = gatekeeper_settings["rank_settings"][interaction.guild.id]["quiz_menu_message"]
         await interaction.channel.send(quiz_menu_message, view=view)
 
 
