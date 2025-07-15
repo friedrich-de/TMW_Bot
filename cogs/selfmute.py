@@ -1,5 +1,6 @@
 from lib.bot import TMWBot
 import yaml
+import logging
 from typing import Optional
 import os
 
@@ -9,8 +10,10 @@ from discord.ext import tasks
 
 from datetime import datetime, timedelta, timezone
 
+_log = logging.getLogger(__name__)
+
 SELFMUTE_SETTINGS_PATH = os.getenv("ALT_SELFMUTE_SETTINGS_PATH") or "config/selfmute_settings.yml"
-with open(SELFMUTE_SETTINGS_PATH, 'r', encoding="utf-8") as settings_file:
+with open(SELFMUTE_SETTINGS_PATH, "r", encoding="utf-8") as settings_file:
     selfmute_settings = yaml.safe_load(settings_file)
 
 CREATE_ACTIVE_MUTES_TABLE = """
@@ -44,7 +47,12 @@ class Selfmute(commands.Cog):
 
     async def cog_load(self):
         await self.bot.RUN(CREATE_ACTIVE_MUTES_TABLE)
-        self.clear_mutes.start()
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self.clear_mutes.is_running():
+            self.clear_mutes.start()
+            _log.info("Started the clear_mutes task.")
 
     async def perform_mute(self, member: discord.Member, mute_role: discord.Role, unmute_time: datetime):
         roles_not_to_remove = [member.guild.get_role(role_id) for role_id in selfmute_settings.get(member.guild.id, {}).get("roles_not_to_remove", [])]
@@ -55,7 +63,7 @@ class Selfmute(commands.Cog):
         new_roles = [role for role in member.roles if role not in roles_to_save] + [mute_role]
         await member.edit(roles=new_roles)
 
-    @discord.app_commands.command(name="unmute_user",  description="Removes a mute from a user.")
+    @discord.app_commands.command(name="unmute_user", description="Removes a mute from a user.")
     @discord.app_commands.guild_only()
     @discord.app_commands.describe(member="The user to unmute.")
     @discord.app_commands.default_permissions(administrator=True)
@@ -81,15 +89,13 @@ class Selfmute(commands.Cog):
             roles_to_restore = [member.guild.get_role(int(role_id)) for role_id in role_ids_to_restore.split(",")]
             roles_to_restore = [role for role in roles_to_restore if role]
             roles_to_restore.sort(key=lambda role: role.position, reverse=True)
-            roles_to_restore = [role for role in roles_to_restore if not role.is_default(
-            ) and not role.is_premium_subscriber() and role.is_assignable()]
+            roles_to_restore = [role for role in roles_to_restore if not role.is_default() and not role.is_premium_subscriber() and role.is_assignable()]
             await member.add_roles(*roles_to_restore)
             if channel:
-                await channel.send(f"**🕒 Unmuted {member.mention} and restored the following roles. 🕒\n{', '.join([role.mention for role in roles_to_restore])}**",
-                                   allowed_mentions=discord.AllowedMentions.none())
+                await channel.send(f"**🕒 Unmuted {member.mention} and restored the following roles. 🕒\n{', '.join([role.mention for role in roles_to_restore])}**", allowed_mentions=discord.AllowedMentions.none())
         await self.bot.RUN(REMOVE_MUTE_QUERY, (guild_id, user_id))
 
-    @discord.app_commands.command(name="selfmute",  description="Mute yourself for a specified amount of time.")
+    @discord.app_commands.command(name="selfmute", description="Mute yourself for a specified amount of time.")
     @discord.app_commands.guild_only()
     async def selfmute(self, interaction: discord.Interaction, hours: Optional[int] = 0, minutes: Optional[int] = 0):
         await interaction.response.defer(ephemeral=True)
@@ -131,9 +137,7 @@ class Selfmute(commands.Cog):
             announce_channel_id = selfmute_settings.get(interaction.guild.id, {}).get("announce_channel")
             announce_channel = interaction.guild.get_channel(announce_channel_id)
 
-            mute_message = (
-                f"**🔇You ({interaction.user.mention}) have been muted with `{mute_role.name}` " +
-                f"until <t:{int(unmute_time.timestamp())}:F> which is <t:{int(unmute_time.timestamp())}:R>. 🔇\n**")
+            mute_message = f"**🔇You ({interaction.user.mention}) have been muted with `{mute_role.name}` " + f"until <t:{int(unmute_time.timestamp())}:F> which is <t:{int(unmute_time.timestamp())}:R>. 🔇\n**"
 
             role_message = f"You had the following roles: {', '.join([role.mention for role in user_roles])}"
 
@@ -172,8 +176,7 @@ class Selfmute(commands.Cog):
             mute_guild = self.bot.get_guild(guild_id)
             unmute_time = datetime.strptime(unmute_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             if unmute_time > discord.utils.utcnow():
-                await interaction.followup.send(f"You are muted until <t:{int(unmute_time.timestamp())}:F>" +
-                                                f"which is <t:{int(unmute_time.timestamp())}:R> on `{mute_guild.name}`.", ephemeral=True)
+                await interaction.followup.send(f"You are muted until <t:{int(unmute_time.timestamp())}:F>" + f"which is <t:{int(unmute_time.timestamp())}:R> on `{mute_guild.name}`.", ephemeral=True)
             else:
                 announce_channel_id = selfmute_settings.get(guild_id, {}).get("announce_channel")
                 announce_channel = mute_guild.get_channel(announce_channel_id)
@@ -183,21 +186,25 @@ class Selfmute(commands.Cog):
     @tasks.loop(minutes=1)
     async def clear_mutes(self):
         for guild in self.bot.guilds:
-            active_mutes = await self.bot.GET(GET_ALL_MUTES_QUERY, (guild.id,))
-            announce_channel_id = selfmute_settings.get(guild.id, {}).get("announce_channel")
-            announce_channel = guild.get_channel(announce_channel_id)
-            for mute_data in active_mutes:
-                guild_id, user_id, mute_role_id, role_ids_to_restore, unmute_time = mute_data
-                unmute_time = datetime.strptime(unmute_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-                if unmute_time > discord.utils.utcnow().replace():
-                    return
-                else:
-                    member = guild.get_member(user_id)
-                    if member:
-                        await self.perform_user_unmute(member, announce_channel, mute_data)
+            try:
+                active_mutes = await self.bot.GET(GET_ALL_MUTES_QUERY, (guild.id,))
+                announce_channel_id = selfmute_settings.get(guild.id, {}).get("announce_channel")
+                announce_channel = guild.get_channel(announce_channel_id)
+                for mute_data in active_mutes:
+                    guild_id, user_id, mute_role_id, role_ids_to_restore, unmute_time = mute_data
+                    unmute_time = datetime.strptime(unmute_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                    if unmute_time > discord.utils.utcnow().replace():
+                        return
                     else:
-                        await self.bot.RUN(REMOVE_MUTE_QUERY, (guild_id, user_id))
+                        member = guild.get_member(user_id)
+                        if member:
+                            await self.perform_user_unmute(member, announce_channel, mute_data)
+                        else:
+                            await self.bot.RUN(REMOVE_MUTE_QUERY, (guild_id, user_id))
+            except Exception as e:
+                _log.error(f"Error while clearing mutes for guild {guild.id}: {e}")
+                continue
 
 
-async def setup(bot):
+async def setup(bot: TMWBot):
     await bot.add_cog(Selfmute(bot))
