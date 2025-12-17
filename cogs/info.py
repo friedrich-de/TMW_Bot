@@ -16,19 +16,19 @@ def load_info_commands() -> dict[str, str]:
     return cast(dict[str, str], data)
 
 
-info_commands = load_info_commands()
+INFO_COMMANDS = load_info_commands()
 
 
 async def info_autocomplete(interaction: discord.Interaction, current: str):
     if not current:
         return [
             discord.app_commands.Choice(name=key, value=key)
-            for key in info_commands.keys()
+            for key in INFO_COMMANDS.keys()
         ][:25]
     else:
         return [
             discord.app_commands.Choice(name=key, value=key)
-            for key in info_commands.keys()
+            for key in INFO_COMMANDS.keys()
             if current.lower() in key.lower()
         ][:25]
 
@@ -43,7 +43,7 @@ class InfoCommand(commands.Cog):
     @discord.app_commands.describe(info_key="The topic.")
     @discord.app_commands.autocomplete(info_key=info_autocomplete)
     async def info(self, interaction: discord.Interaction, info_key: str):
-        text_info = info_commands.get(info_key)
+        text_info = INFO_COMMANDS.get(info_key)
 
         if not text_info:
             await interaction.response.send_message(

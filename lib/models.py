@@ -1,3 +1,4 @@
+from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from lib.db import Base
@@ -9,5 +10,15 @@ class User(Base):
     user_name: Mapped[str]
 
 
+class UserRanks(Base):
+    __tablename__ = "user_ranks"
+
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    discord_user_id: Mapped[int] = mapped_column(primary_key=True)
+    role_ids: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+
 def register_models() -> None:
-    pass
+    # Import side-effects register models on Base.metadata.
+    # This function exists to make registration explicit.
+    return None

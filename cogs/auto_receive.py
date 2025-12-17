@@ -23,7 +23,7 @@ def load_auto_receive_config() -> dict[int, list[list[int]]]:
     return cast(dict[int, list[list[int]]], data)
 
 
-auto_receive_config = load_auto_receive_config()
+AUTO_RECEIVE_CONFIG = load_auto_receive_config()
 
 
 async def process_auto_roles(guild: discord.Guild, guild_settings: list[list[int]]):
@@ -73,7 +73,7 @@ class AutoReceive(commands.Cog):
     async def give_auto_roles(self):
         try:
             for guild in self.bot.guilds:
-                guild_settings = auto_receive_config.get(guild.id, [])
+                guild_settings = AUTO_RECEIVE_CONFIG.get(guild.id, [])
 
                 if not guild_settings:
                     continue

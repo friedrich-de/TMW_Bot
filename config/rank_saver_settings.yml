@@ -1,4 +1,3 @@
-# No guild specific settings required.
 role_ids_to_ignore:
   - 1300745834232680448 # Janitor
   - 1294661079032528948 # Full-Selfmute
