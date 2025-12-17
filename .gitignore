@@ -1,3 +1,4 @@
+.devcontainer
 **/__pycache__
 cogs/testing_*
 .old

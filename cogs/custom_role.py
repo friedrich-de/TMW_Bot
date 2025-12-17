@@ -58,7 +58,8 @@ class CustomRole(commands.Cog):
         return []
 
     async def check_if_allowed(self, member: discord.Member, allowed_roles: str):
-        allowed_role_ids = [int(role_id) for role_id in allowed_roles.split(",")]
+        allowed_role_ids = [int(role_id)
+                            for role_id in allowed_roles.split(",")]
         if any(role.id in allowed_role_ids for role in member.roles):
             return True
         return False
@@ -77,12 +78,19 @@ class CustomRole(commands.Cog):
         role_icon="Image that should be used.",)
     async def make_custom_role(self, interaction: discord.Interaction, role_name: str, color_code: str, role_icon: discord.Attachment = None):
         await interaction.response.defer()
+
+        # Temporarily disable role icons
+        if role_icon:
+            await interaction.followup.send("Custom role icons are temporarily disabled.")
+            return
+
         custom_role_settings = await self.get_custom_role_settings(interaction.guild.id)
         if not custom_role_settings:
             await interaction.followup.send("Custom role settings are missing. Please ask an admin to set them up.")
             return
 
-        reference_role = interaction.guild.get_role(custom_role_settings["reference_role_id"])
+        reference_role = interaction.guild.get_role(
+            custom_role_settings["reference_role_id"])
         if not reference_role:
             await interaction.followup.send("The reference role for custom roles is missing.")
             return
@@ -110,7 +118,8 @@ class CustomRole(commands.Cog):
             await interaction.followup.send("You can't use this role name. Try another one.")
             return
 
-        actual_color_code = int(re.findall(r"^#((?:[0-9a-fA-F]{3}){1,2})$", color_code)[0], base=16)
+        actual_color_code = int(re.findall(
+            r"^#((?:[0-9a-fA-F]{3}){1,2})$", color_code)[0], base=16)
         discord_colour = discord.Colour(actual_color_code)
 
         if role_icon:
@@ -173,26 +182,30 @@ class CustomRole(commands.Cog):
             if not custom_role_settings:
                 continue
 
-            allowed_role_ids = [int(role_id) for role_id in custom_role_settings["allowed_roles"].split(",")]
+            allowed_role_ids = [
+                int(role_id) for role_id in custom_role_settings["allowed_roles"].split(",")]
             custom_role_data = await self.get_custom_roles(guild.id)
 
             for user_data in custom_role_data:
                 member = guild.get_member(user_data["user_id"])
                 if not member:
                     await self.clear_custom_role_data(guild, user_data["user_id"], user_data["role_id"])
-                    print(f"CUSTOM ROLE: Removed custom role from {str(member)}.")
+                    print(
+                        f"CUSTOM ROLE: Removed custom role from {str(member)}.")
                     continue
 
                 if not any(role.id in allowed_role_ids for role in member.roles):
                     await self.clear_custom_role_data(guild, user_data["user_id"], user_data["role_id"])
-                    print(f"CUSTOM ROLE: Removed custom role from {str(member)}.")
+                    print(
+                        f"CUSTOM ROLE: Removed custom role from {str(member)}.")
                     continue
 
                 role = guild.get_role(user_data["role_id"])
 
                 if not role:
                     await self.clear_custom_role_data(guild, user_data["user_id"], user_data["role_id"])
-                    print(f"CUSTOM ROLE: Removed custom role from {str(member)}.")
+                    print(
+                        f"CUSTOM ROLE: Removed custom role from {str(member)}.")
                     continue
 
                 if not role.members:
