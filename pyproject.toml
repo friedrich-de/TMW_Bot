@@ -1,0 +1,42 @@
+[project]
+name = "tmw_bot"
+version = "0.1.0"
+description = "The Moe Way Discord Bot"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.13.2",
+    "aiosqlite>=0.22.0",
+    "bar-chart-race>=0.1.0",
+    "discord-py>=2.6.4",
+    "humanize>=4.14.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.3.5",
+    "pandas>=2.3.3",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "requests>=2.32.5",
+    "seaborn>=0.13.2",
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B"]
+ignore = ["E501"]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[dependency-groups]
+dev = ["ruff>=0.14.9"]

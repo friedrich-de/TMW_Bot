@@ -1,0 +1,11 @@
+{
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "always",
+        "source.organizeImports.ruff": "always",
+        "source.fixAll.pylance": "always",
+    },
+    "editor.formatOnSave": true,
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "python-envs.pythonProjects": []
+}

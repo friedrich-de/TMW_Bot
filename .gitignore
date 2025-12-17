@@ -3,9 +3,7 @@ cogs/testing_*
 .old
 .env
 .venv
-.vscode
 data
 .flake8
 poetry.lock
-*.toml
 *.DS_Store
