@@ -13,11 +13,6 @@ def load_info_commands() -> dict[str, str]:
     with open(INFO_COMMANDS_PATH, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    if not isinstance(data, dict):
-        raise TypeError(
-            "Info commands file must contain a dictionary at the top level."
-        )
-
     return cast(dict[str, str], data)
 
 
