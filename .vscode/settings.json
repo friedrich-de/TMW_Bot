@@ -1,9 +1,9 @@
 {
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {
-        "source.fixAll.ruff": "always",
-        "source.organizeImports.ruff": "always",
-        "source.fixAll.pylance": "always",
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit",
+        "source.fixAll.pylance": "explicit",
     },
     "editor.formatOnSave": true,
     "python.defaultInterpreterPath": ".venv/bin/python",
