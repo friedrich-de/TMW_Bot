@@ -6,6 +6,5 @@
         "source.fixAll.pylance": "explicit",
     },
     "editor.formatOnSave": true,
-    "python.defaultInterpreterPath": ".venv/bin/python",
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
 }

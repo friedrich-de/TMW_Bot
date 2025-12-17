@@ -4,6 +4,10 @@ from typing import Any
 
 import discord
 from discord.ext import commands
+from sqlalchemy.ext.asyncio import async_sessionmaker
+
+import lib.models
+from lib.db import Base, get_db_engine
 
 _log = logging.getLogger(__name__)
 
@@ -16,6 +20,14 @@ class TMWBot(commands.Bot):
     ):
         super().__init__(command_prefix=command_prefix, intents=discord.Intents.all())
         self.path_to_db = path_to_db or "data/db.sqlite3"
+        self.engine = get_db_engine(self.path_to_db)
+        self.session_factory = async_sessionmaker(
+            self.engine, expire_on_commit=False)
+
+    async def setup_hook(self):
+        lib.models.register_models()
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     async def reply(
         self,
@@ -39,12 +51,14 @@ class TMWBot(commands.Bot):
 
     async def on_ready(self):
         if self.user:
-            _log.info(f"Bot is ready. Logged in as {self.user.name} ({self.user.id})")
+            _log.info(
+                f"Bot is ready. Logged in as {self.user.name} ({self.user.id})")
         else:
             _log.info("Bot is ready but user information is unavailable.")
 
     async def load_cogs(self) -> None:
-        cogs_to_load = [cog for cog in os.listdir("cogs") if cog.endswith(".py")]
+        cogs_to_load = [cog for cog in os.listdir(
+            "cogs") if cog.endswith(".py")]
 
         for cog in cogs_to_load:
             cog = f"cogs.{cog[:-3]}"
@@ -99,3 +113,9 @@ class TMWBot(commands.Bot):
             "An error occurred while processing your command:",
             embed=error_embed,
         )
+
+    async def close(self) -> None:
+        try:
+            await super().close()
+        finally:
+            await self.engine.dispose()
