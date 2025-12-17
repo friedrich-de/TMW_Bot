@@ -4,7 +4,7 @@ from lib.db import Base
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "usernames"
     discord_user_id: Mapped[int] = mapped_column(primary_key=True)
     user_name: Mapped[str]
 
