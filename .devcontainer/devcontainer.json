@@ -16,7 +16,8 @@
                 "shardulm94.trailing-spaces",
                 "tamasfe.even-better-toml",
                 "yzhang.markdown-all-in-one",
-                "eamodio.gitlens"
+                "eamodio.gitlens",
+                "openai.chatgpt"
             ]
         }
     }

@@ -18,6 +18,15 @@ class UserRanks(Base):
     role_ids: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
 
+class CustomRoleEntry(Base):
+    __tablename__ = "custom_roles"
+
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    role_id: Mapped[int]
+    role_name: Mapped[str | None]
+
+
 def register_models() -> None:
     # Import side-effects register models on Base.metadata.
     # This function exists to make registration explicit.

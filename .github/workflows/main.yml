@@ -35,7 +35,6 @@ jobs:
           --env COMMAND_PREFIX=${{ vars.COMMAND_PREFIX }} \
           --env PATH_TO_DB=${{ vars.PATH_TO_DB }} \
           --env AUTHORIZED_USERS=${{ vars.AUTHORIZED_USERS }} \
-          --env DEBUG_USER=${{ vars.DEBUG_USER }} \
           --env TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
           --env OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
           --restart unless-stopped \

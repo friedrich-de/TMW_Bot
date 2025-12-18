@@ -1,0 +1,9 @@
+617136488840429598: # TMW
+  allowed_roles: [1302271426270859325] # Custom Role
+  reference_role_id: 1302271529618374749 # custom_role_pos_reference
+  role_icon_allowed: false
+
+1297383002610995272: # Test Server
+  allowed_roles: [1297383002849935459, 1297383002849935456] # Administrator. Uchagi
+  reference_role_id: 1302268036925096019 # custom_role_pos_reference
+  role_icon_allowed: true

@@ -213,8 +213,6 @@ Note: No user commands - internal utility module only.
 
     `AUTHORIZED_USERS=960526101833191435,501009840437592074` Comma separated list of user IDs who can use bot management commands.
 
-    `DEBUG_USER=960526101833191435` User ID of the user who gets sent debug messages.
-
     `COMMAND_PREFIX=%`
 
     `PATH_TO_DB=data/db.sqlite3`
