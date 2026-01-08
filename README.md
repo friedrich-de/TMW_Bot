@@ -112,6 +112,28 @@ Commands:
 
 ---
 
+#### `writing_club.py`
+
+Writing club tracking system that allows users to log their writing activities (characters written in Japanese). This system is completely separate from the immersion logging system with its own points system.
+
+Commands:
+* `/writing_club_log` `<amount>` `<name>` `<comment>` `<backfill_date>` - Log writing activity. Amount is number of characters written (required). Name and comment are optional. Backfill_date can be YYYY-MM-DD or YYYY-MM-DD HH:MM format (max 7 days in the past).
+* `/writing_club_log_undo` `<log_entry>` - Remove a previous writing log entry. Users can only undo their own logs, except Writing Club Leaders who can undo any user's log. The log_entry parameter uses autocomplete to show your recent logs.
+* `/writing_club_logs` `<user>` - View writing logs for a user in an embed format with clickable links. Each log entry shows its ID, which can be used to identify logs for undoing. User parameter is optional (defaults to command user).
+
+Features:
+* Separate points system (independent from immersion points)
+* UTC calendar day streaks (same logic as immersion system)
+* All-time total points displayed in log confirmation
+* Clickable links support (Discord links, Google Docs, etc.)
+* Channel restrictions (text channels, forum post threads only - no DMs)
+* Writing Club Leader role can undo any user's log
+* Log IDs displayed in logs view for easy identification
+
+Note: Requires configuration in `writing_club_settings.yml` to define allowed channels, leader role ID, and point multipliers.
+
+---
+
 #### `info.py`
 
 Provides informational commands that display predefined knowledge and documentation to users. Commands and their content are configured through a YAML file.
