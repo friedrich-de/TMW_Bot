@@ -1,0 +1,18 @@
+points_multiplier: 1.0  # Points per character (1 character = 1 point)
+max_characters_per_log: 50000  # Maximum characters allowed per log entry
+
+# Guild-specific settings (guild ID as key)
+# To get guild ID: Enable Developer Mode → Right-click server name → Copy Server ID
+617136488840429598: # TMW
+  allowed_log_channels:
+    # Add channel IDs where writing logs are allowed
+    # Works for both text channels and forum channels (forum posts create threads)
+    - 1451512930536259604 #writing-club
+    - 1451512974467399752 #writing-corner
+  leader_role_id: 1451434221343080481  # Writing Club Leader role ID (can undo any user's log)
+
+# Add more servers like this:
+# 1297383002610995272: # Test_Guild
+#   allowed_log_channels:
+#     - 987654321098765432
+#   leader_role_id: 111111111111111111

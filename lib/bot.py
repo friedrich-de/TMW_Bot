@@ -38,6 +38,14 @@ class TMWBot(commands.Bot):
             async with aiosqlite.connect(self.path_to_db) as db:
                 await db.execute(query, params)
                 await db.commit()
+    
+    async def RUN_AND_GET_ID(self, query: str, params: tuple = ()):
+        """Execute a query and return the last inserted row ID."""
+        async with self._db_lock:
+            async with aiosqlite.connect(self.path_to_db) as db:
+                cursor = await db.execute(query, params)
+                await db.commit()
+                return cursor.lastrowid
 
     async def RUN_MANY(self, query: str, rows: list[tuple]):
         async with self._db_lock:
