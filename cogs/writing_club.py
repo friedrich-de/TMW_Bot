@@ -436,6 +436,112 @@ class WritingClub(commands.Cog):
 
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+    @discord.app_commands.command(name="writing_club_claim_badge", description="Claim a writing club badge based on your points!")
+    @app_commands.describe(role="The badge role you want to claim.")
+    @app_commands.guild_only()
+    async def claim_badge(self, interaction: discord.Interaction, role: discord.Role):
+        if not await is_valid_channel(interaction):
+            return await interaction.response.send_message(
+                "You can only use this command in the writing club channels.",
+                ephemeral=True
+            )
+
+        # Check if role is a valid badge
+        badges = writing_club_settings.get('badges', {})
+        # Normalize badge keys to ints (YAML might load them as strings)
+        badges_normalized = {int(k) if isinstance(k, (str, int)) else k: v for k, v in badges.items()}
+        
+        role_id = role.id
+        if role_id not in badges_normalized:
+            return await interaction.response.send_message(
+                f"{role.mention} is not a valid writing club badge role.",
+                ephemeral=True
+            )
+
+        # Get required points for this badge
+        required_points = badges_normalized[role_id]
+
+        # Get user's total points
+        total_points = await self.get_total_points(interaction.user.id)
+
+        # Check if user has enough points
+        if total_points < required_points:
+            return await interaction.response.send_message(
+                f"You need {required_points:,} points to claim this badge. You currently have {total_points:,.2f} points.",
+                ephemeral=True
+            )
+
+        # Get member object
+        member = interaction.guild.get_member(interaction.user.id)
+        if member is None:
+            return await interaction.response.send_message(
+                "Could not find your member information in this server.",
+                ephemeral=True
+            )
+
+        # Check if user already has the role
+        if role in member.roles:
+            return await interaction.response.send_message(
+                f"You already have the {role.mention} badge!",
+                ephemeral=True
+            )
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Remove all other writing club badges (users can claim any badge they qualify for)
+        badges_to_remove = []
+        for badge_role_id in badges_normalized.keys():
+            if badge_role_id != role.id:
+                badge_role = interaction.guild.get_role(badge_role_id)
+                if badge_role and badge_role in member.roles:
+                    badges_to_remove.append(badge_role)
+
+        # Remove other badges if any
+        if badges_to_remove:
+            try:
+                await member.remove_roles(*badges_to_remove, reason="Claiming writing club badge")
+            except discord.Forbidden:
+                await interaction.followup.send(
+                    "I don't have permission to remove your existing badges. Please contact an administrator.",
+                    ephemeral=True
+                )
+                return
+            except discord.HTTPException as e:
+                _log.error(f"Error removing badges: {e}")
+                await interaction.followup.send(
+                    "An error occurred while removing your existing badges. Please contact an administrator.",
+                    ephemeral=True
+                )
+                return
+
+        # Assign the new badge
+        try:
+            await member.add_roles(role, reason=f"Claimed writing club badge ({total_points:,.2f} points)")
+            
+            # Get badge name for display
+            badge_name = role.name
+            
+            # Create success message
+            success_message = f"Congratulations! You've claimed the **{badge_name}** badge! {role.mention}\n"
+            success_message += f"You have {total_points:,.2f} points (required: {required_points:,} points)."
+            
+            if badges_to_remove:
+                removed_names = [r.name for r in badges_to_remove]
+                success_message += f"\n\nYour previous badge(s) ({', '.join(removed_names)}) have been replaced with this badge."
+
+            await interaction.followup.send(success_message, ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(
+                "I don't have permission to assign roles. Please contact an administrator.",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            _log.error(f"Error assigning badge: {e}")
+            await interaction.followup.send(
+                "An error occurred while assigning the badge. Please contact an administrator.",
+                ephemeral=True
+            )
+
 
 async def setup(bot):
     await bot.add_cog(WritingClub(bot))
