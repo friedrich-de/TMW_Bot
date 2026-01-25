@@ -440,12 +440,6 @@ class WritingClub(commands.Cog):
     @app_commands.describe(role="The badge role you want to claim.")
     @app_commands.guild_only()
     async def claim_badge(self, interaction: discord.Interaction, role: discord.Role):
-        if not await is_valid_channel(interaction):
-            return await interaction.response.send_message(
-                "You can only use this command in the writing club channels.",
-                ephemeral=True
-            )
-
         # Check if role is a valid badge
         badges = writing_club_settings.get('badges', {})
         # Normalize badge keys to ints (YAML might load them as strings)
@@ -539,6 +533,62 @@ class WritingClub(commands.Cog):
             _log.error(f"Error assigning badge: {e}")
             await interaction.followup.send(
                 "An error occurred while assigning the badge. Please contact an administrator.",
+                ephemeral=True
+            )
+
+    @discord.app_commands.command(name="writing_club_remove_badge", description="Remove your writing club badge!")
+    @app_commands.guild_only()
+    async def remove_badge(self, interaction: discord.Interaction):
+        # Get member object
+        member = interaction.guild.get_member(interaction.user.id)
+        if member is None:
+            return await interaction.response.send_message(
+                "Could not find your member information in this server.",
+                ephemeral=True
+            )
+
+        # Get all valid badge roles
+        badges = writing_club_settings.get('badges', {})
+        # Normalize badge keys to ints (YAML might load them as strings)
+        badges_normalized = {int(k) if isinstance(k, (str, int)) else k: v for k, v in badges.items()}
+
+        # Find all writing club badges the user has
+        badges_to_remove = []
+        for badge_role_id in badges_normalized.keys():
+            badge_role = interaction.guild.get_role(badge_role_id)
+            if badge_role and badge_role in member.roles:
+                badges_to_remove.append(badge_role)
+
+        # Check if user has any badges
+        if not badges_to_remove:
+            return await interaction.response.send_message(
+                "You don't have any writing club badges to remove.",
+                ephemeral=True
+            )
+
+        await interaction.response.defer(ephemeral=True)
+
+        # Remove all badges
+        try:
+            await member.remove_roles(*badges_to_remove, reason="Removed writing club badge")
+            
+            # Get badge names for display
+            removed_names = [r.name for r in badges_to_remove]
+            badge_mentions = [r.mention for r in badges_to_remove]
+            
+            success_message = f"Successfully removed your writing club badge(s): {', '.join(badge_mentions)}\n"
+            success_message += f"**{', '.join(removed_names)}**"
+            
+            await interaction.followup.send(success_message, ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(
+                "I don't have permission to remove your badges. Please contact an administrator.",
+                ephemeral=True
+            )
+        except discord.HTTPException as e:
+            _log.error(f"Error removing badges: {e}")
+            await interaction.followup.send(
+                "An error occurred while removing your badges. Please contact an administrator.",
                 ephemeral=True
             )
 
