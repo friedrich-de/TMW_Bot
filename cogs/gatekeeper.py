@@ -16,7 +16,8 @@ _log = logging.getLogger(__name__)
 
 KOTOBA_BOT_ID = 251239170058616833
 
-GATEKEEPER_SETTINGS_PATH = os.getenv("ALT_GATEKEEPER_SETTINGS_PATH") or "config/gatekeeper_settings.yml"
+GATEKEEPER_SETTINGS_PATH = os.getenv(
+    "ALT_GATEKEEPER_SETTINGS_PATH") or "config/gatekeeper_settings.yml"
 with open(GATEKEEPER_SETTINGS_PATH, "r", encoding="utf-8") as f:
     gatekeeper_settings = yaml.safe_load(f)
 
@@ -63,8 +64,10 @@ GET_USER_THREAD = """SELECT thread_id FROM user_threads WHERE user_id = ?;"""
 
 
 async def quiz_autocomplete(interaction: discord.Interaction, current_input: str):
-    rank_names = [quiz["name"] for quiz in gatekeeper_settings["rank_structure"][interaction.guild.id] if quiz["combination_rank"] is False and quiz["no_timeout"] is False]
-    possible_choices = [discord.app_commands.Choice(name=rank_name, value=rank_name) for rank_name in rank_names]
+    rank_names = [quiz["name"] for quiz in gatekeeper_settings["rank_structure"]
+                  [interaction.guild.id] if quiz["combination_rank"] is False and quiz["no_timeout"] is False]
+    possible_choices = [discord.app_commands.Choice(
+        name=rank_name, value=rank_name) for rank_name in rank_names]
     return possible_choices[0:25]
 
 
@@ -143,7 +146,8 @@ async def verify_quiz_settings(quiz_data, quiz_result, member: discord.Member):
     if font_size and font_size != quiz_result["settings"]["fontSize"]:
         return False, "Set font size does not match required font size."
 
-    failed_question_count = len(quiz_result["questions"]) - quiz_result["scores"][0]["score"]
+    failed_question_count = len(
+        quiz_result["questions"]) - quiz_result["scores"][0]["score"]
     if failed_question_count >= fail_count:
         return False, f"Failed too many questions. Score: {quiz_result['scores'][0]['score']} out of {answer_count}."
 
@@ -176,7 +180,8 @@ async def extract_quiz_result_from_id(quiz_id):
                 async with session.get(jsonurl) as resp:
                     return await resp.json()
         except aiohttp.ClientConnectorDNSError:
-            _log.warning(f"Failed to connect to Kotoba API for quiz ID {quiz_id}.")
+            _log.warning(
+                f"Failed to connect to Kotoba API for quiz ID {quiz_id}.")
             return None
 
 
@@ -192,7 +197,8 @@ def get_next_sunday_midnight_from(dt):
     if days_until_sunday == 0:
         days_until_sunday = 7
     next_sunday = dt + timedelta(days=days_until_sunday)
-    next_sunday_midnight = datetime(next_sunday.year, next_sunday.month, next_sunday.day, 0, 0, 0, tzinfo=timezone.utc)
+    next_sunday_midnight = datetime(
+        next_sunday.year, next_sunday.month, next_sunday.day, 0, 0, 0, tzinfo=timezone.utc)
     return next_sunday_midnight
 
 
@@ -200,7 +206,8 @@ class DynamicQuizMenu(discord.ui.DynamicItem[discord.ui.Select[discord.ui.View]]
     def __init__(self, levelup: "LevelUp", guild_id: int):
         self.levelup = levelup
         self.guild_id = guild_id
-        rank_names = [(quiz["name"], quiz.get("emoji")) for quiz in gatekeeper_settings["rank_structure"][guild_id] if quiz["command"]]
+        rank_names = [(quiz["name"], quiz.get("emoji"))
+                      for quiz in gatekeeper_settings["rank_structure"][guild_id] if quiz["command"]]
         super().__init__(
             discord.ui.Select(
                 custom_id=f"quizmenu-guild:{guild_id}",
@@ -375,7 +382,8 @@ class LevelUp(commands.Cog):
         index_specified = bool(quiz_result["decks"][0].get("startIndex"))
         for rank in rank_structure:
             index_required = rank.get("deck_range", None) is not None
-            rank_decks = set(rank["decks"]) if rank.get("decks") is not None else set()
+            rank_decks = set(rank["decks"]) if rank.get(
+                "decks") is not None else set()
             if rank_decks == set(deck_names) and index_required == index_specified:
                 return rank
         return None
@@ -397,7 +405,8 @@ class LevelUp(commands.Cog):
 
     async def check_if_combination_rank_earned(self, member: discord.Member):
         rank_structure = gatekeeper_settings["rank_structure"][member.guild.id]
-        combination_ranks = [rank_data for rank_data in rank_structure if rank_data["combination_rank"] is True]
+        combination_ranks = [
+            rank_data for rank_data in rank_structure if rank_data["combination_rank"] is True]
         earned_ranks = await self.bot.GET(GET_PASSED_QUIZZES, (member.guild.id, member.id))
         earned_ranks = [rank[0] for rank in earned_ranks]
         combination_ranks.reverse()
@@ -410,7 +419,8 @@ class LevelUp(commands.Cog):
                 await self.send_in_announcement_channel(member, f"{member.mention} is now a {role_to_get.name}!")
 
     async def send_in_announcement_channel(self, member: discord.Member, message: str):
-        announcement_channel = member.guild.get_channel(gatekeeper_settings["rank_settings"][member.guild.id]["announce_channel"])
+        announcement_channel = member.guild.get_channel(
+            gatekeeper_settings["rank_settings"][member.guild.id]["announce_channel"])
         await announcement_channel.send(message)
 
     async def already_owns_higher_or_same_role(self, rank_to_get_id: int, member: discord.Member):
@@ -463,7 +473,26 @@ class LevelUp(commands.Cog):
         if not quiz_data:
             return
 
-        member = message.guild.get_member(int(quiz_result["participants"][0]["discordUser"]["id"]))
+        participant_id = int(
+            quiz_result["participants"][0]["discordUser"]["id"])
+        member = message.guild.get_member(participant_id)
+        if not member:
+            _log.info(
+                f"Member {participant_id} not found in cache, attempting to fetch from API.")
+            try:
+                member = await message.guild.fetch_member(participant_id)
+            except discord.NotFound:
+                _log.warning(
+                    f"Member {participant_id} not found in guild {message.guild.id}. They may have left the server.")
+                await message.channel.send("Could not find the quiz participant in this server. They may have left.")
+                return
+            except discord.HTTPException as e:
+                _log.error(f"Failed to fetch member {participant_id}: {e}")
+                await message.channel.send("Failed to retrieve quiz participant information. Please contact a moderator.")
+                return
+
+        _log.debug(
+            f"Processing quiz result for member {member} ({member.id}) - Quiz: {quiz_data['name']}")
 
         success, quiz_message = await verify_quiz_settings(quiz_data, quiz_result, member)
 
@@ -515,14 +544,17 @@ class LevelUp(commands.Cog):
     @discord.app_commands.guild_only()
     async def ranktable(self, interaction: discord.Interaction):
         quiz_roles = await self.get_all_quiz_roles(interaction.guild)
-        total_ranked_members = len(set([member for role in quiz_roles for member in role.members]))
+        total_ranked_members = len(
+            set([member for role in quiz_roles for member in role.members]))
 
-        description = "\n".join([f"{role.mention}: {len(role.members)} ({len(role.members) / total_ranked_members * 100:.2f}%)" for role in quiz_roles])
+        description = "\n".join(
+            [f"{role.mention}: {len(role.members)} ({len(role.members) / total_ranked_members * 100:.2f}%)" for role in quiz_roles])
 
         description += f"\n\nTotal ranked members: {total_ranked_members}"
         description += f"\nTotal member count: {interaction.guild.member_count}"
 
-        embed = discord.Embed(title=f"Role Distribution", description=description, color=discord.Color.blurple())
+        embed = discord.Embed(title=f"Role Distribution",
+                              description=description, color=discord.Color.blurple())
         await interaction.response.send_message(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
     @discord.app_commands.command(name="rankusers", description="See all users with a specific role.")
@@ -534,7 +566,8 @@ class LevelUp(commands.Cog):
         for member in role.members:
             mention_string.append(member.mention)
         if len(" ".join(mention_string)) < 500:
-            mention_string.append(f"\n\nA total {member_count} members have the role {role.mention}.")
+            mention_string.append(
+                f"\n\nA total {member_count} members have the role {role.mention}.")
             await interaction.response.send_message(" ".join(mention_string), allowed_mentions=discord.AllowedMentions.none())
         else:
             member_string = [str(member) for member in role.members]
@@ -564,7 +597,8 @@ class LevelUp(commands.Cog):
 
         rank_structure = gatekeeper_settings["rank_structure"][guild_id]
 
-        rank_command_embed = discord.Embed(title="Rank Commands", color=discord.Color.blurple())
+        rank_command_embed = discord.Embed(
+            title="Rank Commands", color=discord.Color.blurple())
 
         for rank in rank_structure:
             if rank["command"]:
@@ -585,11 +619,13 @@ class LevelUp(commands.Cog):
                 if rank["require_role"]:
                     description += f"\nRequired role: {interaction.guild.get_role(rank['require_role']).mention}"
 
-                rank_command_embed.add_field(name=rank["name"], value=description, inline=False)
+                rank_command_embed.add_field(
+                    name=rank["name"], value=description, inline=False)
 
             elif rank["combination_rank"]:
                 rank_to_get = await self.rank_to_get(guild_id, rank)
-                rank_command_embed.add_field(name=rank["name"], value=f"Required quizzes: {', '.join(rank['quizzes_required'])}" + f"\nReward role: {rank_to_get}", inline=False)
+                rank_command_embed.add_field(
+                    name=rank["name"], value=f"Required quizzes: {', '.join(rank['quizzes_required'])}" + f"\nReward role: {rank_to_get}", inline=False)
 
         await interaction.response.send_message(embed=rank_command_embed, ephemeral=True)
 
