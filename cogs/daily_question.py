@@ -34,8 +34,7 @@ INSERT INTO daily_questions (guild_id, channel_id, question, created_at)
 VALUES (?, ?, ?, ?);
 """
 
-PROMPT = """Create a daily question in Japanese that is interesting and original and will spark discussion.
-The question should be challenging but not too difficult, and should encourage conversation.
+PROMPT = """Create a daily question in Japanese that is easy to respond to and encourages conversation.
 Here are the last questions that were asked (avoid similar topics):
 
 {recent_questions_str}
