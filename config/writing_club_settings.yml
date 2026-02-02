@@ -1,6 +1,14 @@
 points_multiplier: 1.0  # Points per character (1 character = 1 point)
 max_characters_per_log: 50000  # Maximum characters allowed per log entry
 
+# Badge configuration (role ID -> point threshold)
+badges:
+  1462335708344615014: 5000   # Writing Club: 種
+  1462335936338854058: 10000  # Writing Club: 芽
+  1462336071542112409: 25000  # Writing Club: 葉
+  1462336178760974428: 50000  # Writing Club: 花
+  1462336284809892010: 100000 # Writing Club: 実
+
 # Guild-specific settings (guild ID as key)
 # To get guild ID: Enable Developer Mode → Right-click server name → Copy Server ID
 617136488840429598: # TMW
