@@ -107,7 +107,8 @@ def process_bar_data(df: pd.DataFrame, from_date: datetime, to_date: datetime, i
 
 
 def process_heatmap_data(df: pd.DataFrame, from_date: datetime, to_date: datetime) -> dict:
-    df = df.resample("D").sum()
+    # Keep only numeric points data so reindex fill values do not touch string columns.
+    df = df[["points_received"]].resample("D").sum()
     full_date_range = pd.date_range(start=datetime(df.index.year.min(), 1, 1), end=datetime(df.index.year.max(), 12, 31))
     df = df.reindex(full_date_range, fill_value=0)
     df["day"] = df.index.weekday
