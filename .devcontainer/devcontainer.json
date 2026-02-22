@@ -3,6 +3,14 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
+    "mounts": [
+        {
+            "source": "devcontainer-codex-cache-${localEnv:USER}",
+            "target": "/home/vscode/.codex",
+            "type": "volume"
+        }
+
+    ],
     "customizations": {
         "vscode": {
             "extensions": [
