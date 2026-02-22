@@ -5,6 +5,7 @@ sticky, the old copy is deleted and a fresh one is posted so it always
 appears at the bottom of the conversation.
 """
 
+import asyncio
 import logging
 
 import discord
@@ -134,8 +135,18 @@ async def send_sticky_copy(
 class StickyMessages(commands.Cog):
     """Keep a designated message pinned to the bottom of a channel."""
 
+    STICKY_DEBOUNCE_SECONDS = 3.0
+
     def __init__(self, bot: TMWBot) -> None:
         self.bot = bot
+        self._channel_locks: dict[int, asyncio.Lock] = {}
+
+    def _lock_for(self, channel_id: int) -> asyncio.Lock:
+        lock = self._channel_locks.get(channel_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._channel_locks[channel_id] = lock
+        return lock
 
     @app_commands.command(
         name="sticky_last_message",
@@ -230,50 +241,61 @@ class StickyMessages(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
-        sticky = await get_sticky(self.bot, message.guild.id, message.channel.id)
-        if sticky is None:
+        channel_id = message.channel.id
+        guild_id = message.guild.id
+
+        lock = self._lock_for(channel_id)
+
+        if lock.locked():
             return
 
-        # Delete the previous sticky copy.
-        if sticky.stickied_message_id is not None:
-            old_sticky = await fetch_message_safe(
-                self.bot, message.channel.id, sticky.stickied_message_id
+        async with lock:
+            await asyncio.sleep(self.STICKY_DEBOUNCE_SECONDS)
+
+            sticky = await get_sticky(self.bot, guild_id, channel_id)
+            if sticky is None:
+                return
+
+            # Delete the previous sticky copy.
+            if sticky.stickied_message_id is not None:
+                old_sticky = await fetch_message_safe(
+                    self.bot, channel_id, sticky.stickied_message_id
+                )
+                if old_sticky is not None:
+                    await delete_message_safe(old_sticky)
+
+            # Fetch the original message and re-post.
+            original = await fetch_message_safe(
+                self.bot, channel_id, sticky.original_message_id
             )
-            if old_sticky is not None:
-                await delete_message_safe(old_sticky)
 
-        # Fetch the original message and re-post.
-        original = await fetch_message_safe(
-            self.bot, message.channel.id, sticky.original_message_id
-        )
+            if original is None:
+                _log.warning(
+                    "Original sticky message_id=%s not found in channel_id=%s; removing sticky.",
+                    sticky.original_message_id,
+                    channel_id,
+                )
+                await delete_sticky(self.bot, guild_id, channel_id)
+                return
 
-        if original is None:
-            _log.warning(
-                "Original sticky message_id=%s not found in channel_id=%s; removing sticky.",
-                sticky.original_message_id,
-                message.channel.id,
+            assert isinstance(message.channel, discord.abc.Messageable)
+            try:
+                new_sticky = await send_sticky_copy(message.channel, original)
+            except discord.HTTPException:
+                _log.exception(
+                    "Failed to re-post sticky in channel_id=%s guild_id=%s",
+                    channel_id,
+                    guild_id,
+                )
+                return
+
+            await upsert_sticky(
+                self.bot,
+                guild_id=guild_id,
+                channel_id=channel_id,
+                original_message_id=sticky.original_message_id,
+                stickied_message_id=new_sticky.id,
             )
-            await delete_sticky(self.bot, message.guild.id, message.channel.id)
-            return
-
-        assert isinstance(message.channel, discord.abc.Messageable)
-        try:
-            new_sticky = await send_sticky_copy(message.channel, original)
-        except discord.HTTPException:
-            _log.exception(
-                "Failed to re-post sticky in channel_id=%s guild_id=%s",
-                message.channel.id,
-                message.guild.id,
-            )
-            return
-
-        await upsert_sticky(
-            self.bot,
-            guild_id=message.guild.id,
-            channel_id=message.channel.id,
-            original_message_id=sticky.original_message_id,
-            stickied_message_id=new_sticky.id,
-        )
 
 
 async def setup(bot: TMWBot) -> None:
