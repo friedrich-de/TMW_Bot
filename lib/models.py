@@ -36,6 +36,28 @@ class StickyMessage(Base):
     stickied_message_id: Mapped[int | None]
 
 
+class UserBookmark(Base):
+    __tablename__ = "user_bookmarks"
+
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(primary_key=True)
+    guild_id: Mapped[int]
+    channel_id: Mapped[int]
+    message_link: Mapped[str]
+    dm_message_id: Mapped[int]
+
+
+class BookmarkedMessage(Base):
+    __tablename__ = "bookmarked_messages"
+
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(primary_key=True)
+    channel_id: Mapped[int]
+    message_author_id: Mapped[int]
+    message_link: Mapped[str]
+    bookmark_count: Mapped[int] = mapped_column(default=0)
+
+
 def register_models() -> None:
     # Import side-effects register models on Base.metadata.
     # This function exists to make registration explicit.
