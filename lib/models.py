@@ -27,6 +27,15 @@ class CustomRoleEntry(Base):
     role_name: Mapped[str | None]
 
 
+class StickyMessage(Base):
+    __tablename__ = "sticky_messages"
+
+    guild_id: Mapped[int] = mapped_column(primary_key=True)
+    channel_id: Mapped[int] = mapped_column(primary_key=True)
+    original_message_id: Mapped[int]
+    stickied_message_id: Mapped[int | None]
+
+
 def register_models() -> None:
     # Import side-effects register models on Base.metadata.
     # This function exists to make registration explicit.

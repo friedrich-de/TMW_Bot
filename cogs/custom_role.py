@@ -362,7 +362,7 @@ async def create_custom_role(
 
 async def position_custom_role(custom_role: discord.Role, reference_role: discord.Role) -> None:
     try:
-        await custom_role.guild.edit_role_positions({custom_role: reference_role.position - 1})
+        await custom_role.guild.edit_role_positions({custom_role: reference_role.position})
     except discord.Forbidden:
         _log.warning(
             "Missing permissions to move custom role in guild_id=%s",
