@@ -36,6 +36,7 @@ class RoleCreationContext:
     colour: discord.Colour
     icon_bytes: bytes | None
     settings: CustomRoleGuildSettings
+    existing_role_id: int | None
 
 
 def load_custom_role_settings() -> dict[int, CustomRoleGuildSettings]:
@@ -172,7 +173,12 @@ async def ensure_member_is_allowed(
 
 
 async def validate_role_name(
-    bot: TMWBot, interaction: discord.Interaction, guild: discord.Guild, role_name: str
+    bot: TMWBot,
+    interaction: discord.Interaction,
+    guild: discord.Guild,
+    role_name: str,
+    *,
+    existing_role_id: int | None = None,
 ) -> str | None:
     cleaned_name = role_name.strip()
     if len(cleaned_name) > MAX_ROLE_NAME_LENGTH:
@@ -182,7 +188,10 @@ async def validate_role_name(
         )
         return None
 
-    if any(role.name == cleaned_name for role in guild.roles):
+    if any(
+        role.name == cleaned_name and role.id != existing_role_id
+        for role in guild.roles
+    ):
         await bot.reply(interaction, "You can't use this role name. Try another one.")
         return None
 
@@ -266,7 +275,18 @@ async def build_role_creation_context(
     if not await ensure_member_is_allowed(bot, interaction, member, settings.allowed_role_ids):
         return None
 
-    validated_role_name = await validate_role_name(bot, interaction, guild, role_name)
+    entries = await fetch_custom_roles(bot, guild.id)
+    existing_entry = next(
+        (entry for entry in entries if entry.user_id == member.id), None)
+    existing_role_id = existing_entry.role_id if existing_entry is not None else None
+
+    validated_role_name = await validate_role_name(
+        bot,
+        interaction,
+        guild,
+        role_name,
+        existing_role_id=existing_role_id,
+    )
     if validated_role_name is None:
         return None
 
@@ -286,6 +306,7 @@ async def build_role_creation_context(
         colour=colour,
         icon_bytes=icon_bytes,
         settings=settings,
+        existing_role_id=existing_role_id,
     )
 
 
@@ -368,6 +389,23 @@ async def assign_custom_role_to_member(
         return False
 
     return True
+
+
+async def cleanup_failed_custom_role_creation(custom_role: discord.Role) -> None:
+    try:
+        await custom_role.delete(reason="Cleanup after failed custom role assignment")
+    except discord.Forbidden:
+        _log.warning(
+            "Missing permissions to delete failed custom role role_id=%s in guild_id=%s",
+            custom_role.id,
+            custom_role.guild.id,
+        )
+    except discord.HTTPException:
+        _log.exception(
+            "HTTP error deleting failed custom role role_id=%s in guild_id=%s",
+            custom_role.id,
+            custom_role.guild.id,
+        )
 
 
 async def save_custom_role_entry(bot: TMWBot, context: RoleCreationContext, role_id: int) -> None:
@@ -490,6 +528,7 @@ class CustomRole(commands.Cog):
         if not await assign_custom_role_to_member(
             self.bot, interaction, context.member, custom_role
         ):
+            await cleanup_failed_custom_role_creation(custom_role)
             return
 
         await save_custom_role_entry(self.bot, context, custom_role.id)
