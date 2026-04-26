@@ -146,43 +146,6 @@ async def writing_club_log_undo_autocomplete(interaction: discord.Interaction, c
     return choices[:10]
 
 
-async def is_valid_channel(interaction: discord.Interaction) -> bool:
-    """Check if the command can be used in this channel."""
-    # DMs are not allowed - all logs must be in configured channels for moderation
-    if interaction.guild is None:
-        return False
-    
-    # Admins can use anywhere
-    if interaction.user.guild_permissions.administrator:
-        return True
-    
-    # Get guild-specific settings
-    # YAML loads numeric keys as ints, but we should check both int and str versions
-    guild_id = interaction.guild.id
-    guild_settings = writing_club_settings.get(guild_id) or writing_club_settings.get(str(guild_id), {})
-    
-    # Check allowed channels (text channels and forum channels)
-    # Forum posts create threads, so we check both channel.id and channel.parent_id
-    allowed_channels = guild_settings.get('allowed_log_channels', [])
-    if not allowed_channels:
-        # If no allowed channels configured, deny access (except for admins)
-        return False
-    
-    # Convert channel IDs to ints for comparison (YAML might have them as strings)
-    allowed_channel_ids = [int(ch) if isinstance(ch, (str, int)) else ch for ch in allowed_channels]
-    current_channel_id = interaction.channel.id
-    
-    if current_channel_id in allowed_channel_ids:
-        return True
-    
-    # Check if this is a thread (forum post) and if the parent forum channel is allowed
-    if hasattr(interaction.channel, 'parent_id') and interaction.channel.parent_id:
-        if interaction.channel.parent_id in allowed_channel_ids:
-            return True
-    
-    return False
-
-
 class WritingClub(commands.Cog):
     def __init__(self, bot: TMWBot):
         self.bot = bot
@@ -207,12 +170,6 @@ class WritingClub(commands.Cog):
         comment: Optional[str] = None,
         backfill_date: Optional[str] = None
     ):
-        if not await is_valid_channel(interaction):
-            return await interaction.response.send_message(
-                "You can only use this command in the writing club channels.",
-                ephemeral=True
-            )
-
         if not amount.isdigit():
             return await interaction.response.send_message("Amount must be a valid number.", ephemeral=True)
         amount = int(amount)
@@ -289,7 +246,37 @@ class WritingClub(commands.Cog):
             icon_url=interaction.user.display_avatar.url
         )
 
-        logged_message = await interaction.followup.send(embed=log_embed)
+        guild_settings = {}
+        if interaction.guild:
+            guild_settings = writing_club_settings.get(interaction.guild.id) or writing_club_settings.get(
+                str(interaction.guild.id), {}
+            )
+        post_channel_id = guild_settings.get("writing_logs_channel_id")
+        post_channel: discord.abc.Messageable | None = None
+        if post_channel_id is not None and interaction.guild:
+            post_channel_id = int(post_channel_id)
+            post_channel = interaction.guild.get_channel(post_channel_id)
+            if post_channel is None:
+                try:
+                    fetched = await interaction.guild.fetch_channel(post_channel_id)
+                    if isinstance(fetched, discord.abc.Messageable):
+                        post_channel = fetched
+                except (discord.NotFound, discord.Forbidden):
+                    post_channel = None
+
+        if post_channel is not None:
+            try:
+                logged_message = await post_channel.send(embed=log_embed)
+            except discord.HTTPException as e:
+                _log.error("writing_club_log: failed to post to writing_logs_channel_id: %s", e)
+                logged_message = await interaction.followup.send(embed=log_embed)
+            else:
+                await interaction.followup.send(
+                    f"Your writing log was posted in {post_channel.mention}.",
+                    ephemeral=True,
+                )
+        else:
+            logged_message = await interaction.followup.send(embed=log_embed)
 
         # Reply with URLs if they're in name or comment
         if name and (name.startswith("http://") or name.startswith("https://")):
@@ -326,12 +313,6 @@ class WritingClub(commands.Cog):
     @app_commands.describe(log_entry="Select the log entry you want to undo.")
     @app_commands.autocomplete(log_entry=writing_club_log_undo_autocomplete)
     async def log_undo(self, interaction: discord.Interaction, log_entry: str):
-        if not await is_valid_channel(interaction):
-            return await interaction.response.send_message(
-                "You can only use this command in the writing club channels.",
-                ephemeral=True
-            )
-
         if not log_entry.isdigit():
             return await interaction.response.send_message("Invalid log entry selected.", ephemeral=True)
 
@@ -374,12 +355,6 @@ class WritingClub(commands.Cog):
     @discord.app_commands.command(name="writing_club_logs", description="View writing logs for a user!")
     @app_commands.describe(user="The user to view logs for (optional)")
     async def logs(self, interaction: discord.Interaction, user: Optional[discord.User] = None):
-        if not await is_valid_channel(interaction):
-            return await interaction.response.send_message(
-                "You can only use this command in the writing club channels.",
-                ephemeral=True
-            )
-
         await interaction.response.defer(ephemeral=True)
         user_id = user.id if user else interaction.user.id
         user_logs = await self.bot.GET(GET_USER_LOGS_FOR_DISPLAY_QUERY, (user_id,))

@@ -12,6 +12,8 @@ badges:
 # Guild-specific settings (guild ID as key)
 # To get guild ID: Enable Developer Mode → Right-click server name → Copy Server ID
 617136488840429598: # TMW
+  # Public /writing_club_log embeds are always posted here ("Writing Logs")
+  writing_logs_channel_id: 1462543964073885790
   allowed_log_channels:
     # Add channel IDs where writing logs are allowed
     # Works for both text channels and forum channels (forum posts create threads)
