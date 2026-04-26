@@ -6,7 +6,7 @@ pyyaml
 matplotlib
 numpy
 seaborn
-pandas
+pandas<2.2
 humanize
 bar_chart_race
 requests
