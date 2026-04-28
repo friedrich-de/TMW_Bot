@@ -4,20 +4,20 @@ rank_structure:
       emoji: <:student:1341420183729733708>
       require_role: null
       combination_rank: false
-      font: "Eishiikaisho"
+      font: "Noto Sans CJK"
       font_size: 100
       rank_to_get: 795698879227887678
       foreground: "#f173ff"
       effect: null
-      time_limit: 16000
+      time_limit: 30000
       decks:
         - "jpdb1k"
       deck_range:
         - 1
         - 300
-      score_limit: 25
+      score_limit: 20
       max_missed: 10
-      command: "k!quiz jpdb1k(1-300) 25 nd mmq=10 dauq=1 font=5 atl=16 color=#f173ff size=100"
+      command: "k!quiz jpdb1k(1-300) 20 nd mmq=10 dauq=1 font=1 atl=30 color=#f173ff size=100"
       no_timeout: true
 
     - name: "Trainee"
