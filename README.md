@@ -1,3 +1,9 @@
+# Archived 2026-04-28
+
+Official development taken over here: https://github.com/friedrich-de/TMW_Bot/forks
+
+___
+
 [![Deploy Discord Bot](https://github.com/friedrich-de/TMW_Bot/actions/workflows/main.yml/badge.svg)](https://github.com/friedrich-de/TMW_Bot/actions/workflows/main.yml)
 
 # TheMoeWay Discord Bot
